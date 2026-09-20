@@ -152,7 +152,7 @@ export default function Admin() {
                 <tr key={r.id}>
                   <td>
                     <a href={r.photo_url} target="_blank" rel="noreferrer">
-                      <img className="admin-thumb" src={r.photo_url} alt="" />
+                      <img className="admin-thumb" src={r.photo_url} alt="" loading="lazy" decoding="async" />
                     </a>
                   </td>
                   <td>{r.guest_name}</td>
