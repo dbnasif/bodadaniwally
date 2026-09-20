@@ -23,9 +23,11 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
     .upload(path, params.photoBlob, { contentType: 'image/jpeg', upsert: false });
 
   if (uploadError) {
+    // TODO(debug temporal): mostramos el detalle técnico para diagnosticar el
+    // deploy inicial. Sacar esto una vez confirmado que las subidas funcionan.
     return {
       status: 'error',
-      message: 'No pudimos subir la foto. Revisá tu conexión e intentá de nuevo.',
+      message: `No pudimos subir la foto. Detalle: ${uploadError.message}`,
     };
   }
 
