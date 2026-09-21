@@ -1,13 +1,20 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import type { Challenge, Grupo } from '../config/challenges';
-import { getGuestId, getGuestName, setGuestName, markCompleted } from '../lib/guest';
+import { getGuestName, setGuestName } from '../lib/guest';
 import { compressImage } from '../lib/image';
-import { submitChallenge } from '../lib/submit';
+import type { SubmitResult } from '../lib/submit';
 
 interface Props {
-  challenge: Challenge;
-  grupo: Grupo;
+  /** Texto pequeño arriba del todo, ej. "A01 · DRAMA INNECESARIO" o "PREMIO ESPECIAL". */
+  label: string;
+  title: string;
+  description: string;
   isEdit: boolean;
+  /** false para la Foto de la Noche: no suma puntos, no se muestra "+1 punto". */
+  showPoints: boolean;
+  successTitle: string;
+  onSubmit: (args: { guestName: string; photoBlob: Blob }) => Promise<SubmitResult>;
+  /** Se llama solo si onSubmit devolvió status 'ok', para que el padre actualice su propio estado local. */
+  onSuccessMark: () => void;
   onClose: () => void;
   onCompleted: () => void;
   onViewRanking: () => void;
@@ -15,7 +22,19 @@ interface Props {
 
 type Step = 'name' | 'pick' | 'preview' | 'uploading' | 'success' | 'error';
 
-export default function MissionModal({ challenge, grupo, isEdit, onClose, onCompleted, onViewRanking }: Props) {
+export default function MissionModal({
+  label,
+  title,
+  description,
+  isEdit,
+  showPoints,
+  successTitle,
+  onSubmit,
+  onSuccessMark,
+  onClose,
+  onCompleted,
+  onViewRanking,
+}: Props) {
   const [step, setStep] = useState<Step>(getGuestName() ? 'pick' : 'name');
   const [nameInput, setNameInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -49,17 +68,10 @@ export default function MissionModal({ challenge, grupo, isEdit, onClose, onComp
         setStep('name');
         return;
       }
-      const result = await submitChallenge({
-        guestId: getGuestId(),
-        guestName,
-        grupo,
-        challengeId: challenge.id,
-        challengeTitle: challenge.title,
-        photoBlob: blob,
-      });
+      const result = await onSubmit({ guestName, photoBlob: blob });
 
       if (result.status === 'ok') {
-        markCompleted(challenge.id);
+        onSuccessMark();
         setStep('success');
       } else {
         setErrorMsg(result.message);
@@ -78,9 +90,7 @@ export default function MissionModal({ challenge, grupo, isEdit, onClose, onComp
           ✕
         </button>
 
-        <div className="modal-challenge-label">
-          {challenge.id} · {challenge.title}
-        </div>
+        <div className="modal-challenge-label">{label}</div>
 
         {step === 'name' && (
           <div className="modal-step">
@@ -104,9 +114,9 @@ export default function MissionModal({ challenge, grupo, isEdit, onClose, onComp
 
         {step === 'pick' && (
           <div className="modal-step">
-            <h2>{challenge.title}</h2>
-            <p className="muted">{challenge.description}</p>
-            {isEdit && <p className="edit-hint">Vas a reemplazar la foto que ya subiste para este desafío.</p>}
+            <h2>{title}</h2>
+            <p className="muted">{description}</p>
+            {isEdit && <p className="edit-hint">Vas a reemplazar la foto que ya subiste.</p>}
             <input
               ref={fileInputRef}
               type="file"
@@ -124,7 +134,7 @@ export default function MissionModal({ challenge, grupo, isEdit, onClose, onComp
           <div className="modal-step">
             <img className="preview-img" src={previewUrl} alt="Vista previa de la foto" />
             <button className="btn-primary" onClick={handleSubmit}>
-              {isEdit ? 'GUARDAR CAMBIO' : 'ENVIAR MISIÓN'}
+              {isEdit ? 'GUARDAR CAMBIO' : 'ENVIAR'}
             </button>
             <button className="btn-text" onClick={() => fileInputRef.current?.click()}>
               Elegir otra foto
@@ -141,8 +151,8 @@ export default function MissionModal({ challenge, grupo, isEdit, onClose, onComp
 
         {step === 'success' && (
           <div className="modal-step center">
-            <h2>{isEdit ? 'FOTO ACTUALIZADA' : '¡MISIÓN CUMPLIDA!'}</h2>
-            {!isEdit && <p className="points">+1 punto</p>}
+            <h2>{successTitle}</h2>
+            {showPoints && !isEdit && <p className="points">+1 punto</p>}
             <div className="modal-actions">
               <button
                 className="btn-primary"
@@ -151,7 +161,7 @@ export default function MissionModal({ challenge, grupo, isEdit, onClose, onComp
                   onClose();
                 }}
               >
-                VOLVER A MIS DESAFÍOS
+                VOLVER
               </button>
               <button
                 className="btn-secondary"

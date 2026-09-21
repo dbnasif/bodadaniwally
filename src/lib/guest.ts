@@ -5,6 +5,7 @@ const GUEST_ID_KEY = 'boda_guest_id';
 const GUEST_NAME_KEY = 'boda_guest_name';
 const COMPLETED_KEY = 'boda_completed';
 const GRUPO_KEY = 'boda_grupo';
+const NIGHT_PHOTO_KEY = 'boda_night_photo_done';
 
 export function getGuestId(): string {
   let id = localStorage.getItem(GUEST_ID_KEY);
@@ -36,6 +37,16 @@ export function markCompleted(challengeId: string) {
   const set = getCompleted();
   set.add(challengeId);
   localStorage.setItem(COMPLETED_KEY, JSON.stringify([...set]));
+}
+
+// "La Foto de la Noche" es independiente de los 5 desafíos: no vive en el
+// mismo Set de `getCompleted()` porque no debe contarse como un desafío más.
+export function isNightPhotoDone(): boolean {
+  return localStorage.getItem(NIGHT_PHOTO_KEY) === '1';
+}
+
+export function markNightPhotoDone() {
+  localStorage.setItem(NIGHT_PHOTO_KEY, '1');
 }
 
 /**

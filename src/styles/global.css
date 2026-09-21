@@ -7,6 +7,11 @@
   --white: #ffffff;
   --danger: #b5544a;
   --radius: 14px;
+  /* Dorado/beige discreto, solo para la Foto de la Noche: la marca visual
+     de que es una competencia distinta, sin salirse de la paleta general. */
+  --gold: #c7a467;
+  --gold-soft: #f4ecda;
+  --gold-text: #5c4a24;
   /* Serif del sistema para subtítulos, sans del sistema para todo el resto:
      casi cero requests de red externos, la app carga rápido en 3G de fiesta.
      La única excepción es --script, una sola fuente decorativa liviana
@@ -143,6 +148,67 @@ h3 {
   border-radius: 999px;
   font-size: 14px;
   font-weight: 600;
+}
+
+.hero-special-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--gold-text);
+  opacity: 0.85;
+}
+
+.night-card {
+  position: relative;
+  background: var(--gold-soft);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 20px 18px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.night-card-tag {
+  display: inline-block;
+  background: var(--gold);
+  color: var(--gold-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.night-card-title {
+  font-family: var(--serif);
+  font-size: 19px;
+  margin: 0 0 6px;
+  color: var(--gold-text);
+}
+
+.night-card-copy {
+  font-size: 14px;
+  color: #565f4f;
+  margin: 0 0 8px;
+}
+
+.night-card-fineprint {
+  font-size: 12px;
+  color: #8a7a54;
+  margin: 0 0 16px;
+}
+
+.night-upload {
+  background: var(--gold);
+  color: var(--gold-text);
+}
+
+.night-upload:active {
+  background: #b8955e;
+}
+
+.night-done {
+  border: 1px solid var(--gold);
 }
 
 .challenge-list {
@@ -448,6 +514,66 @@ h3 {
 
 .admin-page {
   max-width: 900px;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 20px;
+}
+
+.admin-tab {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--sage);
+  background: var(--white);
+  color: var(--text);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-tab.active {
+  background: var(--olive);
+  color: var(--white);
+  border-color: var(--olive);
+}
+
+.night-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.night-gallery-item {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid var(--gold);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.night-gallery-item img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.night-gallery-caption {
+  padding: 8px 10px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.night-gallery-caption span {
+  color: #6a7360;
+  font-size: 11px;
 }
 
 .admin-page section {

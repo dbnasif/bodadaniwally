@@ -146,3 +146,56 @@ create policy "cualquiera puede leer fotos"
   for select
   to anon
   using (bucket_id = 'photos');
+
+-- ============================================================
+-- "La Foto de la Noche": competencia paralela, totalmente separada de
+-- submissions/ranking. Es una tabla propia a propósito — así es
+-- estructuralmente imposible que esto le sume puntos al ranking normal,
+-- no depende de acordarse de filtrarla en ningún lado.
+-- Una fila por invitado (unique guest_id): subir de nuevo reemplaza la
+-- candidatura anterior, nunca crea una segunda.
+-- ============================================================
+create table if not exists public.night_photo (
+  id uuid primary key default gen_random_uuid(),
+  guest_id uuid not null unique,
+  guest_name text not null,
+  grupo text not null check (grupo in ('A', 'B', 'C', 'D', 'E')),
+  photo_path text not null,
+  updated_at timestamptz not null default now()
+);
+
+create or replace function public.night_photo_touch()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists night_photo_touch on public.night_photo;
+create trigger night_photo_touch
+  before insert or update on public.night_photo
+  for each row execute function public.night_photo_touch();
+
+alter table public.night_photo enable row level security;
+
+drop policy if exists "anon puede insertar foto de la noche" on public.night_photo;
+create policy "anon puede insertar foto de la noche"
+  on public.night_photo
+  for insert
+  to anon
+  with check (true);
+
+drop policy if exists "anon puede editar su foto de la noche" on public.night_photo;
+create policy "anon puede editar su foto de la noche"
+  on public.night_photo
+  for update
+  to anon
+  using (true)
+  with check (true);
+
+-- Reutiliza el mismo bucket "photos" (la policy de insert/select de
+-- arriba ya alcanza para cualquier carpeta dentro del bucket, así que
+-- no hace falta una policy de Storage nueva).

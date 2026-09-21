@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { Challenge, Grupo } from '../config/challenges';
+import { getGuestId, markCompleted } from '../lib/guest';
+import { submitChallenge } from '../lib/submit';
 import MissionModal from './MissionModal';
 
 interface Props {
@@ -31,9 +33,23 @@ export default function ChallengeCard({ challenge, grupo, completed, onCompleted
       </div>
       {open && (
         <MissionModal
-          challenge={challenge}
-          grupo={grupo}
+          label={`${challenge.id} · ${challenge.title}`}
+          title={challenge.title}
+          description={challenge.description}
           isEdit={completed}
+          showPoints
+          successTitle={completed ? 'FOTO ACTUALIZADA' : '¡MISIÓN CUMPLIDA!'}
+          onSubmit={({ guestName, photoBlob }) =>
+            submitChallenge({
+              guestId: getGuestId(),
+              guestName,
+              grupo,
+              challengeId: challenge.id,
+              challengeTitle: challenge.title,
+              photoBlob,
+            })
+          }
+          onSuccessMark={() => markCompleted(challenge.id)}
           onClose={() => setOpen(false)}
           onCompleted={onCompleted}
           onViewRanking={onViewRanking}

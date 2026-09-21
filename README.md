@@ -25,12 +25,22 @@ el QR de cada tarjeta (A–E) solo cambia el parámetro `?grupo=` en la URL.
   guardada como variable de entorno en Netlify (`ADMIN_PASSWORD`).
 - **Duplicados y edición:** cada dispositivo genera un `guest_id` (UUID) guardado en
   `localStorage`. La base de datos tiene una restricción única `(guest_id,
-  challenge_id)`: la foto se sube con `upsert`, así que volver a tocar un desafío ya
-  completado **reemplaza la foto en la misma fila** en vez de sumar un punto nuevo.
-  Un trigger en la base impide que esa edición cambie de invitado, grupo o desafío —
-  la policy de `UPDATE` es permisiva (no hay cuentas para restringirla mejor), pero el
+  challenge_id)`: el cliente intenta un `INSERT` y, si ya existe (choque de esa
+  restricción), hace un `UPDATE` aparte — así volver a tocar un desafío ya completado
+  **reemplaza la foto en la misma fila** en vez de sumar un punto nuevo. (Se evitó
+  `upsert`/`ON CONFLICT DO UPDATE` a propósito: en la práctica chocaba con RLS de forma
+  poco predecible; insert-y-si-falla-update es más simple y más fácil de razonar.) Un
+  trigger en la base impide que esa edición cambie de invitado, grupo o desafío — la
+  policy de `UPDATE` es permisiva (no hay cuentas para restringirla mejor), pero el
   trigger es la barrera real. `completed_at` (primera vez) no se toca nunca más y es lo
   que ordena el ranking; `updated_at` sí cambia en cada edición.
+- **"La Foto de la Noche":** competencia paralela, fuera del ranking normal. Vive en su
+  propia tabla `night_photo` (una fila por `guest_id`, no por desafío), separada de
+  `submissions` a propósito — la vista `ranking` solo lee `submissions`, así que es
+  estructuralmente imposible que esto le sume puntos o altere el 0/5, no depende de
+  filtrarla bien en ningún lado. Reutiliza el mismo `MissionModal` de subida (generalizado
+  vía props) y el mismo bucket `photos` (carpeta `foto-de-la-noche/`). Es igual para los
+  cinco grupos y no tiene QR propio.
 
 ## 1. Servicios externos que necesitás crear
 
@@ -71,9 +81,9 @@ No hace falta ninguna otra cuenta. No hay login para los invitados.
 
 > **Si ya tenías el proyecto de Supabase corriendo desde antes:** volvé a pegar y
 > ejecutar el `supabase/schema.sql` actualizado en el SQL Editor. Es seguro
-> re-correrlo — migra la tabla existente sin borrar nada — y es necesario para que
-> funcione la edición de fotos (agrega la columna `updated_at`, el trigger de
-> protección y el permiso de `UPDATE`).
+> re-correrlo — migra lo existente sin borrar nada — y es necesario tanto para la
+> edición de fotos (columna `updated_at`, trigger de protección, permiso de `UPDATE`)
+> como para "La Foto de la Noche" (tabla `night_photo` nueva).
 
 ### 4.1. Crear el proyecto en Supabase
 
@@ -193,6 +203,12 @@ Probalo con al menos dos celulares distintos (uno Android/Chrome, uno iPhone/Saf
 13. [ ] `/admin` con la contraseña correcta muestra todas las cargas, permite
         filtrar por persona/grupo/desafío, y las fotos abren en tamaño completo al
         tocarlas.
+14. [ ] Subir "La Foto de la Noche" no cambia el contador `0/5` ni suma puntos al
+        ranking.
+15. [ ] Subirla de nuevo ("cambiar mi foto") reemplaza la anterior — no aparecen dos
+        candidaturas para la misma persona.
+16. [ ] Dos invitados de grupos distintos (ej. A y C) aparecen juntos en la pestaña
+        "FOTOS DE LA NOCHE" de `/admin`, sin importar el grupo.
 
 ## 8. Qué se dejó fuera a propósito
 

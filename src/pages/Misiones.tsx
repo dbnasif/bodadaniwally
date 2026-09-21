@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { getChallengesForGrupo } from '../config/challenges';
-import { resolveGrupo, getCompleted } from '../lib/guest';
+import { resolveGrupo, getCompleted, isNightPhotoDone } from '../lib/guest';
 import ChallengeCard from '../components/ChallengeCard';
+import NightPhotoCard from '../components/NightPhotoCard';
 import { PawPrint } from '../components/Ornaments';
 
 interface Props {
@@ -11,9 +12,14 @@ interface Props {
 export default function Misiones({ onNavigate }: Props) {
   const [grupo] = useState(() => resolveGrupo());
   const [completed, setCompleted] = useState(() => getCompleted());
+  const [nightDone, setNightDone] = useState(() => isNightPhotoDone());
 
   function refreshCompleted() {
     setCompleted(getCompleted());
+  }
+
+  function refreshNightPhoto() {
+    setNightDone(isNightPhotoDone());
   }
 
   if (!grupo) {
@@ -38,6 +44,7 @@ export default function Misiones({ onNavigate }: Props) {
         <div className="hero-progress">
           {doneCount} / {challenges.length} completados
         </div>
+        <p className="hero-special-note">+ Una misión especial fuera de competencia ✨</p>
       </header>
 
       <div className="challenge-list">
@@ -52,6 +59,13 @@ export default function Misiones({ onNavigate }: Props) {
           />
         ))}
       </div>
+
+      <NightPhotoCard
+        grupo={grupo}
+        done={nightDone}
+        onCompleted={refreshNightPhoto}
+        onViewRanking={() => onNavigate('/ranking')}
+      />
 
       <p className="prize-note">Completá desafíos, sumá puntos y subí en el ranking. Hay premio.</p>
 

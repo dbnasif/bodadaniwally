@@ -27,26 +27,35 @@ export const handler: Handler = async (event) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  const { data, error } = await supabase
-    .from('submissions')
-    .select('id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at')
-    .order('updated_at', { ascending: false });
+  const [submissionsRes, nightPhotoRes] = await Promise.all([
+    supabase
+      .from('submissions')
+      .select('id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at')
+      .order('updated_at', { ascending: false }),
+    supabase
+      .from('night_photo')
+      .select('id, guest_name, grupo, photo_path, updated_at')
+      .order('updated_at', { ascending: false }),
+  ]);
 
-  if (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
+  if (submissionsRes.error) {
+    return { statusCode: 500, body: JSON.stringify({ error: submissionsRes.error.message }) };
+  }
+  if (nightPhotoRes.error) {
+    return { statusCode: 500, body: JSON.stringify({ error: nightPhotoRes.error.message }) };
   }
 
-  const withUrls = (data ?? []).map((row) => ({
+  const withUrl = (row: { photo_path: string }) => ({
     ...row,
     photo_url: supabase.storage.from('photos').getPublicUrl(row.photo_path).data.publicUrl,
-  }));
+  });
 
   return {
     statusCode: 200,
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(withUrls),
+    body: JSON.stringify({
+      submissions: (submissionsRes.data ?? []).map(withUrl),
+      nightPhotos: (nightPhotoRes.data ?? []).map(withUrl),
+    }),
   };
 };

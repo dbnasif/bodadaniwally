@@ -1,15 +1,6 @@
 import { supabase } from '../supabaseClient';
 import type { Grupo } from '../config/challenges';
 
-export interface SubmitParams {
-  guestId: string;
-  guestName: string;
-  grupo: Grupo;
-  challengeId: string;
-  challengeTitle: string;
-  photoBlob: Blob;
-}
-
 export type SubmitResult = { status: 'ok' } | { status: 'error'; message: string };
 
 /**
@@ -19,7 +10,7 @@ export type SubmitResult = { status: 'ok' } | { status: 'error'; message: string
 function slugify(value: string): string {
   const slug = value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -34,31 +25,70 @@ function timestampSlug(date: Date): string {
   )}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
+async function uploadToStorage(path: string, blob: Blob): Promise<string | null> {
+  const { error } = await supabase.storage
+    .from('photos')
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+  return error ? 'No pudimos subir la foto. Revisá tu conexión e intentá de nuevo.' : null;
+}
+
+/**
+ * Probamos INSERT primero. Si la fila ya existe (23505), hacemos un UPDATE
+ * aparte en vez de usar upsert/ON CONFLICT: evitamos así los casos límite de
+ * RLS + ON CONFLICT DO UPDATE de Postgres, y cada operación ejercita una
+ * sola policy. Reutilizado tanto por los desafíos normales como por la
+ * Foto de la Noche.
+ */
+async function insertOrUpdate(
+  table: 'submissions' | 'night_photo',
+  row: Record<string, unknown>,
+  matchColumns: Record<string, unknown>
+): Promise<string | null> {
+  const { error: insertError } = await supabase.from(table).insert(row);
+  if (!insertError) return null;
+
+  if (insertError.code !== '23505') {
+    return 'No pudimos registrar tu misión. Intentá de nuevo.';
+  }
+
+  let query = supabase.from(table).update(row);
+  for (const [column, value] of Object.entries(matchColumns)) {
+    query = query.eq(column, value as string);
+  }
+  const { error: updateError } = await query;
+  return updateError ? 'No pudimos actualizar tu misión. Intentá de nuevo.' : null;
+}
+
+// ---------------------------------------------------------------------
+// Desafíos normales (grupo A-E)
+// ---------------------------------------------------------------------
+
+export interface SubmitChallengeParams {
+  guestId: string;
+  guestName: string;
+  grupo: Grupo;
+  challengeId: string;
+  challengeTitle: string;
+  photoBlob: Blob;
+}
+
 /**
  * name_challenge_fecha-hora_id-corto.jpg — legible para revisar el bucket
  * a mano. El id corto al final evita que dos invitados con el mismo nombre
  * (frecuente) se pisen el archivo entre sí en el mismo desafío.
  */
-function buildPhotoPath(params: SubmitParams): string {
+function buildChallengePhotoPath(params: SubmitChallengeParams): string {
   const namePart = slugify(params.guestName);
   const uniquePart = params.guestId.slice(0, 8);
   const fileName = `${namePart}_${params.challengeId}_${timestampSlug(new Date())}_${uniquePart}.jpg`;
   return `${params.grupo}/${params.challengeId}/${fileName}`;
 }
 
-export async function submitChallenge(params: SubmitParams): Promise<SubmitResult> {
-  const path = buildPhotoPath(params);
+export async function submitChallenge(params: SubmitChallengeParams): Promise<SubmitResult> {
+  const path = buildChallengePhotoPath(params);
 
-  const { error: uploadError } = await supabase.storage
-    .from('photos')
-    .upload(path, params.photoBlob, { contentType: 'image/jpeg', upsert: false });
-
-  if (uploadError) {
-    return {
-      status: 'error',
-      message: 'No pudimos subir la foto. Revisá tu conexión e intentá de nuevo.',
-    };
-  }
+  const uploadError = await uploadToStorage(path, params.photoBlob);
+  if (uploadError) return { status: 'error', message: uploadError };
 
   const row = {
     guest_id: params.guestId,
@@ -69,35 +99,56 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
     photo_path: path,
   };
 
-  // Probamos INSERT primero (primera vez que completa este desafío). Si la
-  // fila ya existe, hacemos un UPDATE aparte en vez de usar upsert/ON
-  // CONFLICT: evitamos así los casos límite de RLS + ON CONFLICT DO UPDATE
-  // de Postgres, y dejamos cada operación con una sola policy involucrada.
-  const { error: insertError } = await supabase.from('submissions').insert(row);
+  const writeError = await insertOrUpdate('submissions', row, {
+    guest_id: params.guestId,
+    challenge_id: params.challengeId,
+  });
 
-  if (insertError && insertError.code === '23505') {
-    const { error: updateError } = await supabase
-      .from('submissions')
-      .update(row)
-      .eq('guest_id', params.guestId)
-      .eq('challenge_id', params.challengeId);
-
-    if (updateError) {
-      void supabase.storage.from('photos').remove([path]);
-      return {
-        status: 'error',
-        message: 'La foto se subió pero no pudimos actualizar tu misión. Intentá de nuevo.',
-      };
-    }
-    return { status: 'ok' };
+  if (writeError) {
+    void supabase.storage.from('photos').remove([path]);
+    return { status: 'error', message: writeError };
   }
 
-  if (insertError) {
+  return { status: 'ok' };
+}
+
+// ---------------------------------------------------------------------
+// "La Foto de la Noche" — competencia paralela, fuera del ranking normal.
+// Guardada en su propia tabla (night_photo), nunca toca "submissions".
+// ---------------------------------------------------------------------
+
+export interface SubmitNightPhotoParams {
+  guestId: string;
+  guestName: string;
+  grupo: Grupo;
+  photoBlob: Blob;
+}
+
+function buildNightPhotoPath(params: SubmitNightPhotoParams): string {
+  const namePart = slugify(params.guestName);
+  const uniquePart = params.guestId.slice(0, 8);
+  const fileName = `${namePart}_${timestampSlug(new Date())}_${uniquePart}.jpg`;
+  return `foto-de-la-noche/${fileName}`;
+}
+
+export async function submitNightPhoto(params: SubmitNightPhotoParams): Promise<SubmitResult> {
+  const path = buildNightPhotoPath(params);
+
+  const uploadError = await uploadToStorage(path, params.photoBlob);
+  if (uploadError) return { status: 'error', message: uploadError };
+
+  const row = {
+    guest_id: params.guestId,
+    guest_name: params.guestName,
+    grupo: params.grupo,
+    photo_path: path,
+  };
+
+  const writeError = await insertOrUpdate('night_photo', row, { guest_id: params.guestId });
+
+  if (writeError) {
     void supabase.storage.from('photos').remove([path]);
-    return {
-      status: 'error',
-      message: 'La foto se subió pero no pudimos registrar tu misión. Intentá de nuevo.',
-    };
+    return { status: 'error', message: writeError };
   }
 
   return { status: 'ok' };
