@@ -80,9 +80,10 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
   if (upsertError) {
     // La foto ya se subió pero no se pudo registrar la misión: limpiamos el archivo huérfano.
     void supabase.storage.from('photos').remove([path]);
+    // TODO(debug temporal): detalle técnico para diagnosticar. Sacar una vez confirmado.
     return {
       status: 'error',
-      message: 'La foto se subió pero no pudimos registrar tu misión. Intentá de nuevo.',
+      message: `La foto se subió pero no pudimos registrar tu misión. Detalle: [${upsertError.code}] ${upsertError.message}`,
     };
   }
 
