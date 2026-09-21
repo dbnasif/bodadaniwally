@@ -13,17 +13,24 @@ el QR de cada tarjeta (A–E) solo cambia el parámetro `?grupo=` en la URL.
   (decisión deliberada: un service worker mal cacheado es la forma más común de que
   una app se rompa "a mitad de la fiesta").
 - **Backend:** Supabase (Postgres + Storage). No hay servidor propio.
-  - Tabla `submissions`: una fila por foto. RLS permite `INSERT` público pero **no**
-    `SELECT` público — nadie puede leer nombres/fotos con la clave pública del frontend.
+  - Tabla `submissions`: una fila **por invitado + desafío** (no por foto). RLS permite
+    `INSERT` y `UPDATE` público pero **no** `SELECT` público — nadie puede leer
+    nombres/fotos con la clave pública del frontend.
   - Vista `ranking`: expone solo nombre + puntos + fecha, de lectura pública.
-  - Bucket de Storage `photos`: público en lectura (URLs con UUID, no listables).
+  - Bucket de Storage `photos`: público en lectura (nombres de archivo legibles, pero
+    no hay forma de listar el bucket con la clave pública).
 - **Admin:** una Netlify Function (`netlify/functions/admin-data.ts`) que usa la
   `service_role key` de Supabase **solo del lado del servidor** — esa clave nunca
   se manda al navegador. El acceso a `/admin` se protege con una contraseña simple
   guardada como variable de entorno en Netlify (`ADMIN_PASSWORD`).
-- **Duplicados:** cada dispositivo genera un `guest_id` (UUID) guardado en
-  `localStorage`. La base de datos tiene una restricción única
-  `(guest_id, challenge_id)`: como máximo 1 punto por persona y desafío.
+- **Duplicados y edición:** cada dispositivo genera un `guest_id` (UUID) guardado en
+  `localStorage`. La base de datos tiene una restricción única `(guest_id,
+  challenge_id)`: la foto se sube con `upsert`, así que volver a tocar un desafío ya
+  completado **reemplaza la foto en la misma fila** en vez de sumar un punto nuevo.
+  Un trigger en la base impide que esa edición cambie de invitado, grupo o desafío —
+  la policy de `UPDATE` es permisiva (no hay cuentas para restringirla mejor), pero el
+  trigger es la barrera real. `completed_at` (primera vez) no se toca nunca más y es lo
+  que ordena el ranking; `updated_at` sí cambia en cada edición.
 
 ## 1. Servicios externos que necesitás crear
 
@@ -61,6 +68,12 @@ No hace falta ninguna otra cuenta. No hay login para los invitados.
   simplicidad — es un juego de boda, no un sistema con seguridad bancaria.
 
 ## 4. Setup paso a paso (probarlo en tu celular antes de la boda)
+
+> **Si ya tenías el proyecto de Supabase corriendo desde antes:** volvé a pegar y
+> ejecutar el `supabase/schema.sql` actualizado en el SQL Editor. Es seguro
+> re-correrlo — migra la tabla existente sin borrar nada — y es necesario para que
+> funcione la edición de fotos (agrega la columna `updated_at`, el trigger de
+> protección y el permiso de `UPDATE`).
 
 ### 4.1. Crear el proyecto en Supabase
 
