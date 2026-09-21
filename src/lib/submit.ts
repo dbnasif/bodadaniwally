@@ -83,7 +83,7 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
     // TODO(debug temporal): detalle técnico para diagnosticar. Sacar una vez confirmado.
     return {
       status: 'error',
-      message: `La foto se subió pero no pudimos registrar tu misión. Detalle: [${upsertError.code}] ${upsertError.message}`,
+      message: `Detalle: [${upsertError.code}] ${upsertError.message} | hint: ${upsertError.hint ?? '-'} | details: ${upsertError.details ?? '-'}`,
     };
   }
 
