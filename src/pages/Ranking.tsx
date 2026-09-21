@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { LeafSprig } from '../components/Ornaments';
 
 interface Props {
   onNavigate: (path: string) => void;
@@ -49,9 +48,7 @@ export default function Ranking({ onNavigate }: Props) {
 
   return (
     <div className="page">
-      <header className="hero hero-card small">
-        <LeafSprig className="leaf-corner leaf-corner-left" />
-        <LeafSprig className="leaf-corner leaf-corner-right" />
+      <header className="hero hero-card hero-card-bg small">
         <h1>🏆 RANKING</h1>
       </header>
 

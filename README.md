@@ -1,4 +1,4 @@
-# Misión Secreta — Dani & Wally
+# Misión Fotográfica — Dani & Wally
 
 Mini web app de desafíos fotográficos para la boda (11/10/2026). Una sola aplicación:
 el QR de cada tarjeta (A–E) solo cambia el parámetro `?grupo=` en la URL.

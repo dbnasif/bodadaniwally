@@ -1,21 +1,8 @@
-// Detalles botánicos inline (sin requests externos): un pequeño ramo de
-// hojas para las esquinas y una huella de pata como guiño a Papri.
+// Detalle botánico inline (sin requests externos): una huella de pata
+// como guiño a Papri.
 
 interface OrnamentProps {
   className?: string;
-}
-
-export function LeafSprig({ className }: OrnamentProps) {
-  return (
-    <svg viewBox="0 0 60 90" className={className} aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-        <path d="M30 88 C 28 60, 32 30, 30 4" />
-        <path d="M30 20 C 20 14, 12 16, 6 10" />
-        <path d="M30 40 C 20 34, 12 36, 6 30" />
-        <path d="M30 60 C 20 54, 12 56, 6 50" />
-      </g>
-    </svg>
-  );
 }
 
 export function PawPrint({ className }: OrnamentProps) {

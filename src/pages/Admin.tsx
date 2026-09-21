@@ -97,7 +97,7 @@ export default function Admin() {
 
   return (
     <div className="page admin-page">
-      <h1>Admin — Misión Secreta</h1>
+      <h1>Admin — Misión Fotográfica</h1>
 
       <section>
         <h2>Ranking completo ({rankingSummary.length} invitados)</h2>

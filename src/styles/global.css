@@ -86,30 +86,19 @@ h3 {
   border-radius: 20px;
   padding: 34px 22px 22px;
   margin-bottom: 4px;
+  overflow: hidden;
 }
 
-.leaf-corner {
+.hero-card-bg::before {
+  content: '';
   position: absolute;
-  top: 10px;
-  width: 30px;
-  height: 48px;
-  color: var(--olive);
-  opacity: 0.8;
-}
-
-.leaf-corner-left {
-  left: 10px;
-}
-
-.leaf-corner-right {
-  right: 10px;
-  transform: scaleX(-1);
-}
-
-.papri-slot-img {
-  display: block;
-  max-width: 64px;
-  margin: 0 auto 8px;
+  inset: 0;
+  background-image: url('/hero-bg.webp');
+  background-size: cover;
+  background-position: center 15%;
+  filter: grayscale(1);
+  opacity: 0.08;
+  z-index: -1;
 }
 
 .hero h1 {
