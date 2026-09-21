@@ -19,7 +19,7 @@ export type SubmitResult = { status: 'ok' } | { status: 'error'; message: string
 function slugify(value: string): string {
   const slug = value
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -84,10 +84,9 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
 
     if (updateError) {
       void supabase.storage.from('photos').remove([path]);
-      // TODO(debug temporal): detalle técnico. Sacar una vez confirmado.
       return {
         status: 'error',
-        message: `No pudimos actualizar tu misión. Detalle: [${updateError.code}] ${updateError.message} | hint: ${updateError.hint ?? '-'}`,
+        message: 'La foto se subió pero no pudimos actualizar tu misión. Intentá de nuevo.',
       };
     }
     return { status: 'ok' };
@@ -95,10 +94,9 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
 
   if (insertError) {
     void supabase.storage.from('photos').remove([path]);
-    // TODO(debug temporal): detalle técnico. Sacar una vez confirmado.
     return {
       status: 'error',
-      message: `No pudimos registrar tu misión. Detalle: [${insertError.code}] ${insertError.message} | hint: ${insertError.hint ?? '-'}`,
+      message: 'La foto se subió pero no pudimos registrar tu misión. Intentá de nuevo.',
     };
   }
 
