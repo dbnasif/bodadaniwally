@@ -38,7 +38,7 @@ export default function Misiones({ onNavigate }: Props) {
     <div className="page">
       <header className="hero hero-card hero-card-bg">
         <h1 className="hero-title">Misión Fotográfica</h1>
-        <p>Te tocaron estos 5 desafíos.</p>
+        <p>Te tocaron estos {challenges.length} desafíos.</p>
         <p className="hero-sub">Hacé los que quieras, subí las fotos y sumá puntos.</p>
         <PawPrint className="paw-divider" />
         <div className="hero-progress">

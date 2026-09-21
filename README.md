@@ -55,7 +55,7 @@ No hace falta ninguna otra cuenta. No hay login para los invitados.
 
 - Storage: 1 GB gratis. Con compresión de imágenes en el cliente (~1-1.5MB por foto)
   y un máximo teórico de 300 fotos, quedás en ~450MB. Entra cómodo.
-- Base de datos: 500MB gratis, muy por encima de lo que vas a usar (25 desafíos × 60
+- Base de datos: 500MB gratis, muy por encima de lo que vas a usar (30 desafíos × 60
   personas son unas pocas miles de filas como mucho).
 - **Importante:** los proyectos gratuitos de Supabase **se pausan después de 7 días
   sin actividad**. Como la boda es en octubre 2026, si configurás esto ahora y no lo
@@ -124,12 +124,13 @@ Abrí `http://localhost:5173/?grupo=A` en el navegador para probar el grupo A. P
 probar desde tu celular en la misma red wifi, usá `npm run dev -- --host` y entrá a
 la IP local que te muestre la terminal (ej. `http://192.168.x.x:5173/?grupo=A`).
 
-### 4.3. Editar los 25 desafíos
+### 4.3. Editar los desafíos
 
 Todo el contenido vive en un solo archivo: [`src/config/challenges.ts`](./src/config/challenges.ts).
-Cada grupo (A–E) tiene un array de 5 objetos `{ title, description }`. Los podés
-reemplazar por el texto definitivo cuando quieras; el `id` (A01, A02...) se genera
-solo.
+Cada grupo (A–E) tiene un array de objetos `{ title, description }` (hoy 6 por grupo,
+30 en total). El `id` (A01, A02...) y el contador de la portada se generan solos a
+partir de la cantidad real de objetos — si en algún momento se agrega o saca un
+desafío de un grupo, no hay que tocar nada más.
 
 ### 4.4. Agregar la ilustración de Papri (opcional)
 
@@ -183,7 +184,7 @@ pegar cada URL) e imprimilos en las 5 tarjetas físicas.
 
 Probalo con al menos dos celulares distintos (uno Android/Chrome, uno iPhone/Safari):
 
-1. [ ] El QR/URL de grupo A muestra los 5 desafíos de A (y lo mismo B, C, D, E).
+1. [ ] El QR/URL de grupo A muestra los desafíos de A (y lo mismo B, C, D, E).
 2. [ ] Al tocar "SUBIR FOTO" por primera vez, pide el nombre una sola vez.
 3. [ ] Subís una foto al desafío 01 → queda guardada (revisá en `/admin`).
 4. [ ] Ese desafío pasa a mostrar "✓ COMPLETADO" en ese celular.

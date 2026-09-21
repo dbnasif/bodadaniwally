@@ -1,5 +1,6 @@
-// Único archivo a editar para cambiar los 25 desafíos (5 grupos x 5 desafíos).
-// El id de cada desafío se genera solo (A01..A05, B01..B05, etc.), no hace falta tocarlo.
+// Único archivo a editar para cambiar el contenido de los desafíos.
+// Cada grupo puede tener una cantidad distinta de desafíos si hace falta —
+// el resto de la app (contador, ids, etc.) se adapta solo a challenges.length.
 
 export type Grupo = 'A' | 'B' | 'C' | 'D' | 'E';
 
@@ -18,39 +19,147 @@ interface RawChallenge {
 
 const RAW: Record<Grupo, RawChallenge[]> = {
   A: [
-    { title: 'DRAMA INNECESARIO', description: 'Convertí una situación completamente normal en una tragedia.' },
-    { title: 'ROMANCE INESPERADO', description: 'Hacé parecer romántico algo que definitivamente no lo es.' },
-    { title: 'BAILE IMPOSIBLE', description: 'Sacale una foto a alguien con el paso de baile más raro de la noche.' },
-    { title: 'BRINDIS SOLEMNE', description: 'Un brindis exageradamente serio, con cara de discurso presidencial.' },
-    { title: 'FOTO DE FAMILIA FALSA', description: 'Armá una "foto familiar" con gente que recién conociste esta noche.' },
+    {
+      title: 'CRUCE DE GRUPOS',
+      description: 'Capturá a personas de distintos grupos de amigos o familias compartiendo un momento.',
+    },
+    {
+      title: 'EL ABRAZO MÁS EMOTIVO',
+      description: 'Capturá un abrazo espontáneo lleno de cariño o emoción.',
+    },
+    {
+      title: 'EL LOOK MÁS JUGADO',
+      description: 'Encontrá el accesorio, vestido o traje más original de la fiesta y fotografialo.',
+    },
+    {
+      title: 'ALGO QUE NO DEBERÍA ESTAR ACÁ',
+      description: 'Capturá un objeto, situación o detalle que parezca completamente fuera de lugar.',
+    },
+    {
+      title: 'POSE DE ALFOMBRA ROJA',
+      description: 'Juntá un grupo y hagan su mejor pose de modelos o celebridades.',
+    },
+    {
+      title: 'LA PAPRI DE ESTA NOCHE',
+      description:
+        'Sacate una foto con la mismísima Papri. Pista: no esperes encontrar un perro caminando por la fiesta.',
+    },
   ],
   B: [
-    { title: 'IMITACIÓN DE LOS NOVIOS', description: 'Alguien imitando la pose de casamiento de Dani & Wally.' },
-    { title: 'EL MEJOR ZAPATO', description: 'Una foto artística centrada 100% en un zapato de la fiesta.' },
-    { title: 'RISA CONGELADA', description: 'Capturá a alguien en pleno ataque de risa, a mitad de carcajada.' },
-    { title: 'BRINDIS EN EQUIPO', description: 'Reuní a un grupo entero brindando a la cámara al mismo tiempo.' },
-    { title: 'MIRADA DE REVISTA', description: 'Una foto tipo "portada de revista de moda" con lo que tengas a mano.' },
+    {
+      title: 'CÓRDOBA + BUENOS AIRES',
+      description:
+        'Encontrá a alguien que viva en Córdoba y a alguien que viva en Buenos Aires. Foto juntos como si fueran amigos de toda la vida.',
+    },
+    {
+      title: 'LA MEJOR RISA',
+      description: 'Capturá a alguien tentado de risa en pleno festejo.',
+    },
+    {
+      title: 'EL TATUAJE ESCONDIDO',
+      description: 'Encontrá el tatuaje más original o llamativo entre los invitados y fotografialo.',
+    },
+    {
+      title: 'GATO POR LIEBRE',
+      description: 'Sacá una foto donde algo parezca una cosa… pero en realidad sea otra.',
+    },
+    {
+      title: 'FOTO DE TURISTA',
+      description:
+        'Sacate una foto como si Altos Eventos fuera una maravilla del mundo que viajaste miles de kilómetros para conocer.',
+    },
+    {
+      title: 'CORDOBÉS POR UN RATO',
+      description:
+        'Sacá una foto que, sin mostrar carteles ni ubicaciones, demuestre que este casamiento está sucediendo en Córdoba.',
+    },
   ],
   C: [
-    { title: 'ABRAZO GRUPAL', description: 'El abrazo grupal más grande que puedas armar en 30 segundos.' },
-    { title: 'BAILE CONGELADO', description: 'Todos en la pista congelados a mitad de movimiento, como pausados.' },
-    { title: 'PISTA A FULL', description: 'Una foto de la pista de baile en su momento más lleno.' },
-    { title: 'BESO A LA CÁMARA', description: 'Un beso volador dedicado directo a la cámara.' },
-    { title: 'BRINDIS SECRETO', description: 'Un brindis clandestino, como si fuera un plan secreto entre amigos.' },
+    {
+      title: 'EL MÁS VIAJERO',
+      description:
+        'Encontrá a quien haya viajado desde más lejos para estar en el casamiento y tómense una foto brindando.',
+    },
+    {
+      title: 'SORPRENDIDOS IN FRAGANTI',
+      description: 'Capturá a alguien comiendo, riendo o distraído sin que pose para la foto.',
+    },
+    {
+      title: 'PARECIDOS RAZONABLES',
+      description: 'Encontrá a dos invitados que podrían pasar por hermanos aunque no lo sean.',
+    },
+    {
+      title: 'EL DETALLE QUE NADIE VIO',
+      description:
+        'Encontrá un detalle del casamiento que creas que la mayoría todavía no notó. Cuanto más escondido, mejor.',
+    },
+    {
+      title: 'EL MOMENTO JUSTO',
+      description:
+        'Capturá a alguien en el aire: saltando, bailando o en pleno movimiento. No vale simplemente levantar un pie.',
+    },
+    {
+      title: 'SE VIENE EL FRÍO',
+      description:
+        'Encontrá la estrategia más creativa de alguien para combatir el fresco. No necesariamente tiene que ser una manta.',
+    },
   ],
   D: [
-    { title: 'DOBLE DE LOS NOVIOS', description: 'Alguien haciendo de "doble de riesgo" de Dani o Wally por un segundo.' },
-    { title: 'FOTO DESDE ABAJO', description: 'Una foto tomada desde el piso mirando hacia arriba, bien dramática.' },
-    { title: 'APROBADO POR EL DJ', description: 'Una foto con cara de aprobación total a lo que está sonando.' },
-    { title: 'LA MESA MÁS DIVERTIDA', description: 'Demostrá con una foto por qué tu mesa es la mejor de la noche.' },
-    { title: 'SELFIE INESPERADA', description: 'Una selfie grupal con alguien que no esperabas que aparezca.' },
+    {
+      title: 'ADOPCIÓN TEMPORAL',
+      description:
+        'Encontrá a alguien que haya sido adoptado por un grupo que no es el suyo y sacale una foto con su nueva familia.',
+    },
+    {
+      title: 'MAÑANA HAY EVIDENCIA',
+      description: 'Capturá un momento espontáneo que mañana haga preguntar: "¿En qué momento pasó esto?".',
+    },
+    {
+      title: 'EL COLECCIONISTA DE TRAGOS',
+      description: 'Encontrá a alguien con dos bebidas o vasos en la mano al mismo tiempo y sacale una foto.',
+    },
+    {
+      title: 'CASI PERFECTA',
+      description:
+        'Encontrá una escena hermosa o romántica con un pequeño detalle arruinándola. No vale preparar el sabotaje.',
+    },
+    {
+      title: 'NO SOBREVIVIÓ A LA FIESTA',
+      description:
+        'Encontrá algo que haya empezado la boda impecable y que claramente ya esté sufriendo las consecuencias.',
+    },
+    {
+      title: 'LA PREVIA DEL DESASTRE',
+      description: 'Capturá a alguien estudiando la torre del Jenga con una concentración completamente desproporcionada.',
+    },
   ],
   E: [
-    { title: 'ELEGANCIA EXAGERADA', description: 'Una pose exageradamente elegante, como si fueran realeza.' },
-    { title: 'BRINDIS AL CIELO', description: 'Una copa brindando mirando al cielo o a las luces de la fiesta.' },
-    { title: 'DÚO DINÁMICO', description: 'Encontrá a la dupla más divertida de la fiesta y sacale una foto.' },
-    { title: 'ÚLTIMA HORA', description: 'Una foto que resuma el espíritu de la fiesta ya bien entrada la noche.' },
-    { title: 'PAPRI HONORARIO', description: 'Encontrá algo en la fiesta que se parezca, aunque sea un poco, a Papri.' },
+    {
+      title: 'EFECTO PAPRI',
+      description:
+        'Juntá a tres personas que tengan mascota. Cada una debe mostrar una foto de ella en el celular y posar como orgullosos padres de familia.',
+    },
+    {
+      title: 'CÓMPLICES DEL AMOR',
+      description: 'Capturá el mejor beso de la noche. ¡No vale el de los novios!',
+    },
+    {
+      title: 'SELFIE CON LOS NOVIOS',
+      description: 'Sacate una selfie divertida con Dani y Wally.',
+    },
+    {
+      title: 'QUE ALGUIEN EXPLIQUE ESTO',
+      description: 'Sacá la foto más inexplicable de la noche. No la prepares ni la actúes: encontrala.',
+    },
+    {
+      title: 'LA CALMA ANTES DEL CAOS',
+      description: 'Encontrá y fotografiá el rincón más tranquilo de toda la fiesta.',
+    },
+    {
+      title: 'ESTO ES MUY ELLOS',
+      description:
+        'Encontrá una escena, objeto o momento que te haga pensar: "Esto es muy Dani y Wally". No hay respuesta correcta.',
+    },
   ],
 };
 
