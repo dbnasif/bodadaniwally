@@ -60,30 +60,45 @@ export async function submitChallenge(params: SubmitParams): Promise<SubmitResul
     };
   }
 
-  // upsert: si (guest_id, challenge_id) ya existe, ACTUALIZA la fila en vez
-  // de fallar — así una edición reemplaza la foto sin sumar un punto nuevo
-  // (la fila sigue siendo una sola, el conteo de puntos no cambia).
-  const { error: upsertError } = await supabase
-    .from('submissions')
-    .upsert(
-      {
-        guest_id: params.guestId,
-        guest_name: params.guestName,
-        grupo: params.grupo,
-        challenge_id: params.challengeId,
-        challenge_title: params.challengeTitle,
-        photo_path: path,
-      },
-      { onConflict: 'guest_id,challenge_id' }
-    );
+  const row = {
+    guest_id: params.guestId,
+    guest_name: params.guestName,
+    grupo: params.grupo,
+    challenge_id: params.challengeId,
+    challenge_title: params.challengeTitle,
+    photo_path: path,
+  };
 
-  if (upsertError) {
-    // La foto ya se subió pero no se pudo registrar la misión: limpiamos el archivo huérfano.
+  // Probamos INSERT primero (primera vez que completa este desafío). Si la
+  // fila ya existe, hacemos un UPDATE aparte en vez de usar upsert/ON
+  // CONFLICT: evitamos así los casos límite de RLS + ON CONFLICT DO UPDATE
+  // de Postgres, y dejamos cada operación con una sola policy involucrada.
+  const { error: insertError } = await supabase.from('submissions').insert(row);
+
+  if (insertError && insertError.code === '23505') {
+    const { error: updateError } = await supabase
+      .from('submissions')
+      .update(row)
+      .eq('guest_id', params.guestId)
+      .eq('challenge_id', params.challengeId);
+
+    if (updateError) {
+      void supabase.storage.from('photos').remove([path]);
+      // TODO(debug temporal): detalle técnico. Sacar una vez confirmado.
+      return {
+        status: 'error',
+        message: `No pudimos actualizar tu misión. Detalle: [${updateError.code}] ${updateError.message} | hint: ${updateError.hint ?? '-'}`,
+      };
+    }
+    return { status: 'ok' };
+  }
+
+  if (insertError) {
     void supabase.storage.from('photos').remove([path]);
-    // TODO(debug temporal): detalle técnico para diagnosticar. Sacar una vez confirmado.
+    // TODO(debug temporal): detalle técnico. Sacar una vez confirmado.
     return {
       status: 'error',
-      message: `Detalle: [${upsertError.code}] ${upsertError.message} | hint: ${upsertError.hint ?? '-'} | details: ${upsertError.details ?? '-'}`,
+      message: `No pudimos registrar tu misión. Detalle: [${insertError.code}] ${insertError.message} | hint: ${insertError.hint ?? '-'}`,
     };
   }
 
