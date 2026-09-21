@@ -20,7 +20,9 @@ export default function ChallengeCard({ challenge, grupo, completed, onCompleted
         <h3>{challenge.title}</h3>
         <p>{challenge.description}</p>
         {completed ? (
-          <div className="challenge-done">✓ COMPLETADO</div>
+          <button className="challenge-done" onClick={() => setOpen(true)}>
+            ✓ COMPLETADO <span className="challenge-done-edit">· editar foto</span>
+          </button>
         ) : (
           <button className="btn-upload" onClick={() => setOpen(true)}>
             SUBIR FOTO
@@ -31,6 +33,7 @@ export default function ChallengeCard({ challenge, grupo, completed, onCompleted
         <MissionModal
           challenge={challenge}
           grupo={grupo}
+          isEdit={completed}
           onClose={() => setOpen(false)}
           onCompleted={onCompleted}
           onViewRanking={onViewRanking}

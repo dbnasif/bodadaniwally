@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getChallengesForGrupo } from '../config/challenges';
 import { resolveGrupo, getCompleted } from '../lib/guest';
 import ChallengeCard from '../components/ChallengeCard';
+import { LeafSprig, PawPrint } from '../components/Ornaments';
 
 interface Props {
   onNavigate: (path: string) => void;
@@ -29,7 +30,9 @@ export default function Misiones({ onNavigate }: Props) {
 
   return (
     <div className="page">
-      <header className="hero">
+      <header className="hero hero-card">
+        <LeafSprig className="leaf-corner leaf-corner-left" />
+        <LeafSprig className="leaf-corner leaf-corner-right" />
         <img
           src="/papri.png"
           alt=""
@@ -38,9 +41,10 @@ export default function Misiones({ onNavigate }: Props) {
             (e.currentTarget as HTMLImageElement).style.display = 'none';
           }}
         />
-        <h1>MISIÓN SECRETA</h1>
+        <h1 className="hero-title">Misión Secreta</h1>
         <p>Te tocaron estos 5 desafíos.</p>
         <p className="hero-sub">Hacé los que quieras, subí las fotos y sumá puntos.</p>
+        <PawPrint className="paw-divider" />
         <div className="hero-progress">
           {doneCount} / {challenges.length} completados
         </div>

@@ -7,10 +7,13 @@
   --white: #ffffff;
   --danger: #b5544a;
   --radius: 14px;
-  /* Serif del sistema para títulos, sans del sistema para todo lo demás:
-     cero requests de red externos, la app carga instantánea en 3G de fiesta. */
+  /* Serif del sistema para subtítulos, sans del sistema para todo el resto:
+     casi cero requests de red externos, la app carga rápido en 3G de fiesta.
+     La única excepción es --script, una sola fuente decorativa liviana
+     reservada para el título grande de la portada. */
   --serif: Georgia, 'Times New Roman', serif;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --script: 'Parisienne', cursive;
 }
 
 * {
@@ -76,6 +79,33 @@ h3 {
   padding: 24px 8px 16px;
 }
 
+.hero-card {
+  position: relative;
+  background: var(--white);
+  border: 1px solid var(--sage);
+  border-radius: 20px;
+  padding: 34px 22px 22px;
+  margin-bottom: 4px;
+}
+
+.leaf-corner {
+  position: absolute;
+  top: 10px;
+  width: 30px;
+  height: 48px;
+  color: var(--olive);
+  opacity: 0.8;
+}
+
+.leaf-corner-left {
+  left: 10px;
+}
+
+.leaf-corner-right {
+  right: 10px;
+  transform: scaleX(-1);
+}
+
 .papri-slot-img {
   display: block;
   max-width: 64px;
@@ -88,12 +118,28 @@ h3 {
   color: var(--olive);
 }
 
+.hero-title {
+  font-family: var(--script);
+  font-weight: 400;
+  font-size: 46px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
 .hero p {
   margin: 4px 0;
 }
 
 .hero-sub {
   color: #5b6455;
+}
+
+.paw-divider {
+  display: block;
+  width: 18px;
+  height: 18px;
+  color: var(--sage);
+  margin: 10px auto 4px;
 }
 
 .hero.small h1 {
@@ -207,10 +253,28 @@ h3 {
   justify-content: center;
   width: 100%;
   min-height: 50px;
+  border: none;
   border-radius: 12px;
   background: var(--sage-light);
   color: #3d4536;
   font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  gap: 6px;
+}
+
+.challenge-done-edit {
+  font-weight: 500;
+  font-size: 12.5px;
+  opacity: 0.75;
+}
+
+.edit-hint {
+  background: var(--sage-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  color: #3d4536;
 }
 
 .prize-note {
@@ -441,4 +505,9 @@ h3 {
   object-fit: cover;
   border-radius: 6px;
   display: block;
+}
+
+.admin-edited-tag {
+  color: var(--olive);
+  font-style: italic;
 }

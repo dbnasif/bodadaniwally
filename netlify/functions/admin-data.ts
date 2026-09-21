@@ -29,8 +29,8 @@ export const handler: Handler = async (event) => {
 
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, guest_name, grupo, challenge_id, challenge_title, photo_path, created_at')
-    .order('created_at', { ascending: false });
+    .select('id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at')
+    .order('updated_at', { ascending: false });
 
   if (error) {
     return {

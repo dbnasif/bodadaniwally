@@ -7,14 +7,15 @@ import { submitChallenge } from '../lib/submit';
 interface Props {
   challenge: Challenge;
   grupo: Grupo;
+  isEdit: boolean;
   onClose: () => void;
   onCompleted: () => void;
   onViewRanking: () => void;
 }
 
-type Step = 'name' | 'pick' | 'preview' | 'uploading' | 'success' | 'duplicate' | 'error';
+type Step = 'name' | 'pick' | 'preview' | 'uploading' | 'success' | 'error';
 
-export default function MissionModal({ challenge, grupo, onClose, onCompleted, onViewRanking }: Props) {
+export default function MissionModal({ challenge, grupo, isEdit, onClose, onCompleted, onViewRanking }: Props) {
   const [step, setStep] = useState<Step>(getGuestName() ? 'pick' : 'name');
   const [nameInput, setNameInput] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -45,7 +46,6 @@ export default function MissionModal({ challenge, grupo, onClose, onCompleted, o
       const blob = await compressImage(file).catch(() => file);
       const guestName = getGuestName();
       if (!guestName) {
-        // No debería pasar, pero por las dudas no perdemos la foto elegida.
         setStep('name');
         return;
       }
@@ -61,9 +61,6 @@ export default function MissionModal({ challenge, grupo, onClose, onCompleted, o
       if (result.status === 'ok') {
         markCompleted(challenge.id);
         setStep('success');
-      } else if (result.status === 'duplicate') {
-        markCompleted(challenge.id);
-        setStep('duplicate');
       } else {
         setErrorMsg(result.message);
         setStep('error');
@@ -109,6 +106,7 @@ export default function MissionModal({ challenge, grupo, onClose, onCompleted, o
           <div className="modal-step">
             <h2>{challenge.title}</h2>
             <p className="muted">{challenge.description}</p>
+            {isEdit && <p className="edit-hint">Vas a reemplazar la foto que ya subiste para este desafío.</p>}
             <input
               ref={fileInputRef}
               type="file"
@@ -117,17 +115,16 @@ export default function MissionModal({ challenge, grupo, onClose, onCompleted, o
               style={{ display: 'none' }}
             />
             <button className="btn-primary" onClick={() => fileInputRef.current?.click()}>
-              ELEGIR O SACAR FOTO
+              {isEdit ? 'ELEGIR OTRA FOTO' : 'ELEGIR O SACAR FOTO'}
             </button>
           </div>
         )}
 
         {step === 'preview' && previewUrl && (
           <div className="modal-step">
-            {/* eslint-disable-next-line jsx-a11y/img-redundant-alt */}
             <img className="preview-img" src={previewUrl} alt="Vista previa de la foto" />
             <button className="btn-primary" onClick={handleSubmit}>
-              ENVIAR MISIÓN
+              {isEdit ? 'GUARDAR CAMBIO' : 'ENVIAR MISIÓN'}
             </button>
             <button className="btn-text" onClick={() => fileInputRef.current?.click()}>
               Elegir otra foto
@@ -142,10 +139,10 @@ export default function MissionModal({ challenge, grupo, onClose, onCompleted, o
           </div>
         )}
 
-        {(step === 'success' || step === 'duplicate') && (
+        {step === 'success' && (
           <div className="modal-step center">
-            <h2>{step === 'success' ? '¡MISIÓN CUMPLIDA!' : 'YA LA TENÍAS ✓'}</h2>
-            {step === 'success' && <p className="points">+1 punto</p>}
+            <h2>{isEdit ? 'FOTO ACTUALIZADA' : '¡MISIÓN CUMPLIDA!'}</h2>
+            {!isEdit && <p className="points">+1 punto</p>}
             <div className="modal-actions">
               <button
                 className="btn-primary"

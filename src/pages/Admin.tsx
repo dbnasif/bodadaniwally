@@ -8,7 +8,8 @@ interface AdminRow {
   challenge_id: string;
   challenge_title: string;
   photo_url: string;
-  created_at: string;
+  completed_at: string;
+  updated_at: string;
 }
 
 const PASSWORD_KEY = 'boda_admin_pw';
@@ -144,25 +145,31 @@ export default function Admin() {
                 <th>Nombre</th>
                 <th>Grupo</th>
                 <th>Desafío</th>
-                <th>Fecha</th>
+                <th>Foto subida</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <a href={r.photo_url} target="_blank" rel="noreferrer">
-                      <img className="admin-thumb" src={r.photo_url} alt="" loading="lazy" decoding="async" />
-                    </a>
-                  </td>
-                  <td>{r.guest_name}</td>
-                  <td>{r.grupo}</td>
-                  <td>
-                    {r.challenge_id} · {r.challenge_title}
-                  </td>
-                  <td>{new Date(r.created_at).toLocaleString('es-AR')}</td>
-                </tr>
-              ))}
+              {filtered.map((r) => {
+                const wasEdited = r.updated_at !== r.completed_at;
+                return (
+                  <tr key={r.id}>
+                    <td>
+                      <a href={r.photo_url} target="_blank" rel="noreferrer">
+                        <img className="admin-thumb" src={r.photo_url} alt="" loading="lazy" decoding="async" />
+                      </a>
+                    </td>
+                    <td>{r.guest_name}</td>
+                    <td>{r.grupo}</td>
+                    <td>
+                      {r.challenge_id} · {r.challenge_title}
+                    </td>
+                    <td>
+                      {new Date(r.updated_at).toLocaleString('es-AR')}
+                      {wasEdited && <span className="admin-edited-tag"> (editada)</span>}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
