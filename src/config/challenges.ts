@@ -28,8 +28,8 @@ const RAW: Record<Grupo, RawChallenge[]> = {
       description: 'Capturá un abrazo espontáneo lleno de cariño o emoción.',
     },
     {
-      title: 'EL LOOK MÁS JUGADO',
-      description: 'Encontrá el accesorio, vestido o traje más original de la fiesta y fotografialo.',
+      title: 'GEMELOS POR ACCIDENTE',
+      description: 'Encuentren dos invitados vestidos sospechosamente parecidos.',
     },
     {
       title: 'ALGO QUE NO DEBERÍA ESTAR ACÁ',
@@ -56,17 +56,18 @@ const RAW: Record<Grupo, RawChallenge[]> = {
       description: 'Capturá a alguien tentado de risa en pleno festejo.',
     },
     {
-      title: 'EL TATUAJE ESCONDIDO',
-      description: 'Encontrá el tatuaje más original o llamativo entre los invitados y fotografialo.',
+      title: 'EL OBJETO MÁS RANDOM',
+      description: 'Encuentren el objeto más inexplicable que alguien tenga encima.',
     },
     {
       title: 'GATO POR LIEBRE',
       description: 'Sacá una foto donde algo parezca una cosa… pero en realidad sea otra.',
     },
     {
-      title: 'FOTO DE TURISTA',
+      // Repetido a propósito con el desafío de Grupo C (mismo título y consigna).
+      title: 'EL MOMENTO JUSTO',
       description:
-        'Sacate una foto como si Altos Eventos fuera una maravilla del mundo que viajaste miles de kilómetros para conocer.',
+        'Capturá a alguien en el aire: saltando, bailando o en pleno movimiento. No vale simplemente levantar un pie.',
     },
     {
       title: 'CORDOBÉS POR UN RATO',

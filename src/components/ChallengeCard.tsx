@@ -8,11 +8,20 @@ interface Props {
   challenge: Challenge;
   grupo: Grupo;
   completed: boolean;
+  /** URL pública de la foto ya subida a este desafío, si la tenemos guardada. */
+  photoUrl?: string;
   onCompleted: () => void;
   onViewRanking: () => void;
 }
 
-export default function ChallengeCard({ challenge, grupo, completed, onCompleted, onViewRanking }: Props) {
+export default function ChallengeCard({
+  challenge,
+  grupo,
+  completed,
+  photoUrl,
+  onCompleted,
+  onViewRanking,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,7 +30,29 @@ export default function ChallengeCard({ challenge, grupo, completed, onCompleted
       <div className="challenge-body">
         <h3>{challenge.title}</h3>
         <p>{challenge.description}</p>
-        {completed ? (
+        {completed && photoUrl ? (
+          <div className="challenge-done-row">
+            <a
+              href={photoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="challenge-thumb-link"
+              aria-label="Ver foto en tamaño completo"
+            >
+              <img
+                src={photoUrl}
+                alt="Foto subida a este desafío"
+                className="challenge-thumb"
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+            <button className="btn-edit-photo" onClick={() => setOpen(true)}>
+              Editar foto
+            </button>
+          </div>
+        ) : completed ? (
+          // Desafíos completados antes de esta versión, sin URL de foto guardada localmente.
           <button className="challenge-done" onClick={() => setOpen(true)}>
             ✓ COMPLETADO <span className="challenge-done-edit">· editar foto</span>
           </button>
@@ -49,7 +80,7 @@ export default function ChallengeCard({ challenge, grupo, completed, onCompleted
               photoBlob,
             })
           }
-          onSuccessMark={() => markCompleted(challenge.id)}
+          onSuccessMark={(url) => markCompleted(challenge.id, url)}
           onClose={() => setOpen(false)}
           onCompleted={onCompleted}
           onViewRanking={onViewRanking}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { getChallengesForGrupo } from '../config/challenges';
-import { resolveGrupo, getCompleted, isNightPhotoDone } from '../lib/guest';
+import { resolveGrupo, getCompleted, getCompletedPhotos, isNightPhotoDone, getGuestProfile } from '../lib/guest';
 import ChallengeCard from '../components/ChallengeCard';
 import NightPhotoCard from '../components/NightPhotoCard';
+import ProfileModal from '../components/ProfileModal';
 import { PawPrint } from '../components/Ornaments';
 
 interface Props {
@@ -12,14 +13,22 @@ interface Props {
 export default function Misiones({ onNavigate }: Props) {
   const [grupo] = useState(() => resolveGrupo());
   const [completed, setCompleted] = useState(() => getCompleted());
+  const [completedPhotos, setCompletedPhotos] = useState(() => getCompletedPhotos());
   const [nightDone, setNightDone] = useState(() => isNightPhotoDone());
+  const [profile, setProfile] = useState(() => getGuestProfile());
+  const [profileOpen, setProfileOpen] = useState(false);
 
   function refreshCompleted() {
     setCompleted(getCompleted());
+    setCompletedPhotos(getCompletedPhotos());
   }
 
   function refreshNightPhoto() {
     setNightDone(isNightPhotoDone());
+  }
+
+  function refreshProfile() {
+    setProfile(getGuestProfile());
   }
 
   if (!grupo) {
@@ -33,10 +42,19 @@ export default function Misiones({ onNavigate }: Props) {
 
   const challenges = getChallengesForGrupo(grupo);
   const doneCount = challenges.filter((c) => completed.has(c.id)).length;
+  const profileComplete = !!profile.firstName && !!profile.lastName;
 
   return (
     <div className="page">
       <header className="hero hero-card hero-card-bg">
+        {profileComplete && (
+          <div className="hero-greeting">
+            <span>Hola, {profile.firstName} 👋</span>
+            <button className="hero-profile-btn" onClick={() => setProfileOpen(true)}>
+              Mi perfil
+            </button>
+          </div>
+        )}
         <h1 className="hero-title">Misión Fotográfica</h1>
         <p>Te tocaron estos {challenges.length} desafíos.</p>
         <p className="hero-sub">Hacé los que quieras, subí las fotos y sumá puntos.</p>
@@ -54,6 +72,7 @@ export default function Misiones({ onNavigate }: Props) {
             challenge={c}
             grupo={grupo}
             completed={completed.has(c.id)}
+            photoUrl={completedPhotos[c.id]}
             onCompleted={refreshCompleted}
             onViewRanking={() => onNavigate('/ranking')}
           />
@@ -72,6 +91,14 @@ export default function Misiones({ onNavigate }: Props) {
       <button className="ranking-fab" onClick={() => onNavigate('/ranking')}>
         🏆 RANKING
       </button>
+
+      {profileOpen && (
+        <ProfileModal
+          grupo={grupo}
+          onClose={() => setProfileOpen(false)}
+          onSaved={refreshProfile}
+        />
+      )}
     </div>
   );
 }

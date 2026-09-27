@@ -199,3 +199,52 @@ create policy "anon puede editar su foto de la noche"
 -- Reutiliza el mismo bucket "photos" (la policy de insert/select de
 -- arriba ya alcanza para cualquier carpeta dentro del bucket, así que
 -- no hace falta una policy de Storage nueva).
+
+-- ============================================================
+-- Datos de identificación del invitado (nombre, apellido, email opcional).
+-- Tabla propia, separada de submissions/night_photo a propósito: así
+-- editar el perfil nunca puede tocar progreso, fotos ni puntos — son
+-- escrituras completamente independientes, ligadas solo por guest_id.
+-- Una fila por invitado (unique guest_id): volver a guardar el perfil
+-- actualiza esa misma fila, nunca crea una segunda.
+-- ============================================================
+create table if not exists public.guest_profile (
+  id uuid primary key default gen_random_uuid(),
+  guest_id uuid not null unique,
+  first_name text not null,
+  last_name text not null,
+  email text,
+  updated_at timestamptz not null default now()
+);
+
+create or replace function public.guest_profile_touch()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists guest_profile_touch on public.guest_profile;
+create trigger guest_profile_touch
+  before insert or update on public.guest_profile
+  for each row execute function public.guest_profile_touch();
+
+alter table public.guest_profile enable row level security;
+
+drop policy if exists "anon puede insertar su perfil" on public.guest_profile;
+create policy "anon puede insertar su perfil"
+  on public.guest_profile
+  for insert
+  to anon
+  with check (true);
+
+drop policy if exists "anon puede editar su perfil" on public.guest_profile;
+create policy "anon puede editar su perfil"
+  on public.guest_profile
+  for update
+  to anon
+  using (true)
+  with check (true);

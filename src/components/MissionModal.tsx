@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { getGuestName, setGuestName } from '../lib/guest';
+import { getGuestId, getGuestProfile, isProfileComplete, setGuestProfile, getFullName } from '../lib/guest';
 import { compressImage } from '../lib/image';
-import type { SubmitResult } from '../lib/submit';
+import { submitGuestProfile, type SubmitResult } from '../lib/submit';
 
 interface Props {
   /** Texto pequeño arriba del todo, ej. "A01 · DRAMA INNECESARIO" o "PREMIO ESPECIAL". */
@@ -14,13 +14,13 @@ interface Props {
   successTitle: string;
   onSubmit: (args: { guestName: string; photoBlob: Blob }) => Promise<SubmitResult>;
   /** Se llama solo si onSubmit devolvió status 'ok', para que el padre actualice su propio estado local. */
-  onSuccessMark: () => void;
+  onSuccessMark: (photoUrl: string) => void;
   onClose: () => void;
   onCompleted: () => void;
   onViewRanking: () => void;
 }
 
-type Step = 'name' | 'pick' | 'preview' | 'uploading' | 'success' | 'error';
+type Step = 'profile' | 'pick' | 'preview' | 'uploading' | 'success' | 'error';
 
 export default function MissionModal({
   label,
@@ -35,17 +35,23 @@ export default function MissionModal({
   onCompleted,
   onViewRanking,
 }: Props) {
-  const [step, setStep] = useState<Step>(getGuestName() ? 'pick' : 'name');
-  const [nameInput, setNameInput] = useState('');
+  const [step, setStep] = useState<Step>(isProfileComplete() ? 'pick' : 'profile');
+  const [profileDraft, setProfileDraft] = useState(() => getGuestProfile());
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function confirmName() {
-    const trimmed = nameInput.trim();
-    if (!trimmed) return;
-    setGuestName(trimmed);
+  function confirmProfile() {
+    const firstName = profileDraft.firstName.trim();
+    const lastName = profileDraft.lastName.trim();
+    if (!firstName || !lastName) return;
+    const email = profileDraft.email.trim();
+    setGuestProfile({ firstName, lastName, email });
+    // No bloqueamos la carga de la foto esperando esto: es información de
+    // contacto opcional/secundaria, no algo que le tenga que costar un
+    // reintento al invitado si hay mala señal justo en este momento.
+    void submitGuestProfile({ guestId: getGuestId(), firstName, lastName, email });
     setStep('pick');
   }
 
@@ -63,15 +69,14 @@ export default function MissionModal({
     setErrorMsg('');
     try {
       const blob = await compressImage(file).catch(() => file);
-      const guestName = getGuestName();
-      if (!guestName) {
-        setStep('name');
+      if (!isProfileComplete()) {
+        setStep('profile');
         return;
       }
-      const result = await onSubmit({ guestName, photoBlob: blob });
+      const result = await onSubmit({ guestName: getFullName(), photoBlob: blob });
 
       if (result.status === 'ok') {
-        onSuccessMark();
+        onSuccessMark(result.photoUrl);
         setStep('success');
       } else {
         setErrorMsg(result.message);
@@ -92,21 +97,46 @@ export default function MissionModal({
 
         <div className="modal-challenge-label">{label}</div>
 
-        {step === 'name' && (
+        {step === 'profile' && (
           <div className="modal-step">
             <h2>¿Cómo te llamás?</h2>
-            <p className="muted">Así aparecés en el ranking. Solo te lo preguntamos una vez.</p>
+            <p className="muted">Así te identificamos. Solo te lo pedimos una vez.</p>
             <input
-              autoFocus
+              autoFocus={!profileDraft.firstName}
               type="text"
               inputMode="text"
-              placeholder="Tu nombre o apodo"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && confirmName()}
+              placeholder="Nombre"
+              value={profileDraft.firstName}
+              onChange={(e) => setProfileDraft((p) => ({ ...p, firstName: e.target.value }))}
               maxLength={40}
             />
-            <button className="btn-primary" disabled={!nameInput.trim()} onClick={confirmName}>
+            <input
+              autoFocus={!!profileDraft.firstName}
+              type="text"
+              inputMode="text"
+              placeholder="Apellido"
+              value={profileDraft.lastName}
+              onChange={(e) => setProfileDraft((p) => ({ ...p, lastName: e.target.value }))}
+              onKeyDown={(e) => e.key === 'Enter' && confirmProfile()}
+              maxLength={40}
+            />
+            <input
+              type="email"
+              inputMode="email"
+              placeholder="Email (opcional)"
+              value={profileDraft.email}
+              onChange={(e) => setProfileDraft((p) => ({ ...p, email: e.target.value }))}
+              maxLength={80}
+            />
+            <p className="muted field-hint">
+              Dejanos tu mail si querés que después del casamiento te compartamos las fotos de los
+              desafíos 📸
+            </p>
+            <button
+              className="btn-primary"
+              disabled={!profileDraft.firstName.trim() || !profileDraft.lastName.trim()}
+              onClick={confirmProfile}
+            >
               CONTINUAR
             </button>
           </div>

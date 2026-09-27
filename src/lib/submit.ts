@@ -1,7 +1,11 @@
 import { supabase } from '../supabaseClient';
 import type { Grupo } from '../config/challenges';
 
-export type SubmitResult = { status: 'ok' } | { status: 'error'; message: string };
+export type SubmitResult =
+  | { status: 'ok'; photoUrl: string }
+  | { status: 'error'; message: string };
+
+export type ProfileSubmitResult = { status: 'ok' } | { status: 'error'; message: string };
 
 /**
  * Convierte el nombre del invitado en algo seguro para usar como nombre de
@@ -32,6 +36,13 @@ async function uploadToStorage(path: string, blob: Blob): Promise<string | null>
   return error ? 'No pudimos subir la foto. Revisá tu conexión e intentá de nuevo.' : null;
 }
 
+// El bucket "photos" es público en lectura, así que esto solo arma la URL
+// (no hace ningún request de red) — sirve para mostrar la miniatura ya
+// subida sin necesitar permiso de SELECT sobre las tablas.
+function getPhotoPublicUrl(path: string): string {
+  return supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
+}
+
 /**
  * Probamos INSERT primero. Si la fila ya existe (23505), hacemos un UPDATE
  * aparte en vez de usar upsert/ON CONFLICT: evitamos así los casos límite de
@@ -40,7 +51,7 @@ async function uploadToStorage(path: string, blob: Blob): Promise<string | null>
  * Foto de la Noche.
  */
 async function insertOrUpdate(
-  table: 'submissions' | 'night_photo',
+  table: 'submissions' | 'night_photo' | 'guest_profile',
   row: Record<string, unknown>,
   matchColumns: Record<string, unknown>
 ): Promise<string | null> {
@@ -109,7 +120,7 @@ export async function submitChallenge(params: SubmitChallengeParams): Promise<Su
     return { status: 'error', message: writeError };
   }
 
-  return { status: 'ok' };
+  return { status: 'ok', photoUrl: getPhotoPublicUrl(path) };
 }
 
 // ---------------------------------------------------------------------
@@ -151,5 +162,30 @@ export async function submitNightPhoto(params: SubmitNightPhotoParams): Promise<
     return { status: 'error', message: writeError };
   }
 
+  return { status: 'ok', photoUrl: getPhotoPublicUrl(path) };
+}
+
+// ---------------------------------------------------------------------
+// Perfil del invitado (nombre, apellido, email opcional). Tabla propia
+// (guest_profile), nunca toca submissions/night_photo/progreso.
+// ---------------------------------------------------------------------
+
+export interface SubmitGuestProfileParams {
+  guestId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export async function submitGuestProfile(params: SubmitGuestProfileParams): Promise<ProfileSubmitResult> {
+  const row = {
+    guest_id: params.guestId,
+    first_name: params.firstName,
+    last_name: params.lastName,
+    email: params.email || null,
+  };
+
+  const writeError = await insertOrUpdate('guest_profile', row, { guest_id: params.guestId });
+  if (writeError) return { status: 'error', message: writeError };
   return { status: 'ok' };
 }
