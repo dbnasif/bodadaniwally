@@ -4,6 +4,7 @@ import { resolveGrupo, getCompleted, getCompletedPhotos, isNightPhotoDone, getGu
 import ChallengeCard from '../components/ChallengeCard';
 import NightPhotoCard from '../components/NightPhotoCard';
 import ProfileModal from '../components/ProfileModal';
+import ProfileGate from '../components/ProfileGate';
 import { PawPrint } from '../components/Ornaments';
 
 interface Props {
@@ -40,22 +41,25 @@ export default function Misiones({ onNavigate }: Props) {
     );
   }
 
+  const profileComplete = !!profile.firstName && !!profile.lastName;
+
+  // Primera vez que entra alguien: pedimos su nombre antes de mostrar los
+  // desafíos, no al tocar "SUBIR FOTO" como antes.
+  if (!profileComplete) {
+    return <ProfileGate onDone={refreshProfile} />;
+  }
+
   const challenges = getChallengesForGrupo(grupo);
   const doneCount = challenges.filter((c) => completed.has(c.id)).length;
-  const profileComplete = !!profile.firstName && !!profile.lastName;
 
   return (
     <div className="page">
       <header className="hero hero-card hero-card-bg">
-        {profileComplete && (
-          <div className="hero-greeting">
-            <span>Hola, {profile.firstName} 👋</span>
-            <button className="hero-profile-btn" onClick={() => setProfileOpen(true)}>
-              Mi perfil
-            </button>
-          </div>
-        )}
+        <button className="hero-profile-corner" onClick={() => setProfileOpen(true)}>
+          Mi perfil
+        </button>
         <h1 className="hero-title">Misión Fotográfica</h1>
+        <p>Hola, {profile.firstName} 👋</p>
         <p>Te tocaron estos {challenges.length} desafíos.</p>
         <p className="hero-sub">Hacé los que quieras, subí las fotos y sumá puntos.</p>
         <PawPrint className="paw-divider" />

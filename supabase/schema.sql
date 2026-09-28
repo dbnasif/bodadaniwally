@@ -248,3 +248,18 @@ create policy "anon puede editar su perfil"
   to anon
   using (true)
   with check (true);
+
+-- ============================================================
+-- Backups del ranking, para cuando Dani/Wally usen el botón de reset en
+-- /admin. RLS habilitado SIN ninguna policy para "anon" a propósito: nadie
+-- puede leer ni escribir esto con la clave pública, solo la Netlify
+-- Function con la service_role key (que igual bypassea RLS).
+-- ============================================================
+create table if not exists public.ranking_backups (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  created_by text,
+  data jsonb not null
+);
+
+alter table public.ranking_backups enable row level security;

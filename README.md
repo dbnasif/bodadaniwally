@@ -83,7 +83,15 @@ No hace falta ninguna otra cuenta. No hay login para los invitados.
 > ejecutar el `supabase/schema.sql` actualizado en el SQL Editor. Es seguro
 > re-correrlo — migra lo existente sin borrar nada — y es necesario tanto para la
 > edición de fotos (columna `updated_at`, trigger de protección, permiso de `UPDATE`)
-> como para "La Foto de la Noche" (tabla `night_photo` nueva).
+> como para "La Foto de la Noche" (tabla `night_photo`) y el perfil del invitado
+> (tabla `guest_profile`, tabla `ranking_backups`).
+
+**Sobre el reset de ranking:** en `/admin` hay una pestaña "⚠️ RESET" que borra la
+tabla de puntos (`submissions`) después de guardar un backup completo en
+`ranking_backups`. Requiere la contraseña de `/admin` **más** un email de la lista
+`ADMIN_EMAILS` **más** el código de `ADMIN_RESET_CODE` — tres capas a propósito,
+para que no se dispare por accidente. No toca la Foto de la Noche ni los perfiles.
+No lo usen hasta estar seguros de que terminaron de probar la app.
 
 ### 4.1. Crear el proyecto en Supabase
 
@@ -157,12 +165,16 @@ y usá la contraseña que pusiste en `ADMIN_PASSWORD`.
    `netlify.toml` ya tiene configurado el build (`npm run build`), el publish
    directory (`dist`) y las functions (`netlify/functions`) — no hace falta tocar
    nada en la UI de build settings.
-2. En **Site settings → Environment variables**, agregá las 5 variables:
+2. En **Site settings → Environment variables**, agregá las 7 variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `SUPABASE_URL` (mismo valor que la de arriba)
    - `SUPABASE_SERVICE_ROLE_KEY` (la secreta, del paso 4.1)
    - `ADMIN_PASSWORD` (elegí algo simple que Dani & Wally puedan recordar)
+   - `ADMIN_EMAILS` — los emails autorizados a resetear el ranking desde
+     `/admin`, separados por coma (ej. `danii.nasif@gmail.com,augustotraghetti@gmail.com`)
+   - `ADMIN_RESET_CODE` — el código extra que se pide junto al email para
+     confirmar el reset (segunda capa además de `ADMIN_PASSWORD`)
 3. Deploy. Netlify te da una URL tipo `https://tu-sitio.netlify.app`.
 
 ## 6. Generar los 5 códigos QR

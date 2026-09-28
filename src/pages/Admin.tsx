@@ -33,11 +33,16 @@ export default function Admin() {
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'misiones' | 'noche'>('misiones');
+  const [tab, setTab] = useState<'misiones' | 'noche' | 'reset'>('misiones');
 
   const [filterName, setFilterName] = useState('');
   const [filterGrupo, setFilterGrupo] = useState('');
   const [filterChallenge, setFilterChallenge] = useState('');
+
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   async function tryLoad(pw: string) {
     if (!pw) return;
@@ -68,6 +73,41 @@ export default function Admin() {
     if (password) void tryLoad(password);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleReset() {
+    const email = resetEmail.trim();
+    const code = resetCode.trim();
+    if (!email || !code) return;
+
+    const confirmed = window.confirm(
+      'Esto va a borrar TODOS los puntos del ranking (se guarda un backup completo antes de borrar, y no toca la Foto de la Noche ni los perfiles). ¿Confirmás?'
+    );
+    if (!confirmed) return;
+
+    setResetLoading(true);
+    setResetResult(null);
+    try {
+      const res = await fetch('/.netlify/functions/admin-reset-ranking', {
+        method: 'POST',
+        headers: { 'x-admin-password': password, 'content-type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        setResetResult({
+          ok: true,
+          message: `Listo. Se guardó el backup y se resetearon ${body.backedUpSubmissions} filas.`,
+        });
+        void tryLoad(password);
+      } else {
+        setResetResult({ ok: false, message: body.error || 'No se pudo resetear.' });
+      }
+    } catch {
+      setResetResult({ ok: false, message: 'Error de conexión. No se tocó nada.' });
+    } finally {
+      setResetLoading(false);
+    }
+  }
 
   const rows = data?.submissions ?? [];
   const nightPhotos = data?.nightPhotos ?? [];
@@ -123,6 +163,9 @@ export default function Admin() {
         </button>
         <button className={`admin-tab ${tab === 'noche' ? 'active' : ''}`} onClick={() => setTab('noche')}>
           FOTOS DE LA NOCHE ({nightPhotos.length})
+        </button>
+        <button className={`admin-tab admin-tab-danger ${tab === 'reset' ? 'active' : ''}`} onClick={() => setTab('reset')}>
+          ⚠️ RESET
         </button>
       </div>
 
@@ -241,6 +284,41 @@ export default function Admin() {
                 </a>
               ))}
             </div>
+          )}
+        </section>
+      )}
+
+      {tab === 'reset' && (
+        <section>
+          <h2>⚠️ Resetear ranking</h2>
+          <p className="muted">
+            Borra los puntos de todos los invitados (la tabla de desafíos completados). Antes de
+            borrar nada, guarda automáticamente una copia completa en la base. No toca la Foto de
+            la Noche ni los perfiles de los invitados.
+          </p>
+          <div className="admin-filters">
+            <input
+              placeholder="Tu email de administrador"
+              type="email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
+            <input
+              placeholder="Código"
+              type="password"
+              value={resetCode}
+              onChange={(e) => setResetCode(e.target.value)}
+            />
+          </div>
+          <button
+            className="btn-primary reset-btn"
+            disabled={resetLoading || !resetEmail.trim() || !resetCode.trim()}
+            onClick={() => void handleReset()}
+          >
+            {resetLoading ? 'Reseteando...' : 'RESETEAR RANKING'}
+          </button>
+          {resetResult && (
+            <p className={resetResult.ok ? 'profile-saved' : 'error-text'}>{resetResult.message}</p>
           )}
         </section>
       )}
