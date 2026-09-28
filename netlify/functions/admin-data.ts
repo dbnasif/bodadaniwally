@@ -30,11 +30,11 @@ export const handler: Handler = async (event) => {
   const [submissionsRes, nightPhotoRes, profilesRes, historyRes] = await Promise.all([
     supabase
       .from('submissions')
-      .select('id, guest_id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at')
+      .select('id, guest_id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at, deleted_at')
       .order('updated_at', { ascending: false }),
     supabase
       .from('night_photo')
-      .select('id, guest_id, guest_name, grupo, photo_path, updated_at')
+      .select('id, guest_id, guest_name, grupo, photo_path, updated_at, deleted_at')
       .order('updated_at', { ascending: false }),
     supabase
       .from('guest_profile')
@@ -75,11 +75,14 @@ export const handler: Handler = async (event) => {
   const nightPhotoByGuest = new Set<string>();
   for (const s of submissions) {
     if (!grupoByGuest.has(s.guest_id)) grupoByGuest.set(s.guest_id, s.grupo);
-    challengeCountByGuest.set(s.guest_id, (challengeCountByGuest.get(s.guest_id) ?? 0) + 1);
+    // Las eliminadas no cuentan como desafío completado.
+    if (!s.deleted_at) {
+      challengeCountByGuest.set(s.guest_id, (challengeCountByGuest.get(s.guest_id) ?? 0) + 1);
+    }
   }
   for (const n of nightPhotos) {
     if (!grupoByGuest.has(n.guest_id)) grupoByGuest.set(n.guest_id, n.grupo);
-    nightPhotoByGuest.add(n.guest_id);
+    if (!n.deleted_at) nightPhotoByGuest.add(n.guest_id);
   }
 
   const historyCountByGuest = new Map<string, number>();

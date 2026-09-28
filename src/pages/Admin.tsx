@@ -10,6 +10,7 @@ interface SubmissionRow {
   photo_url: string;
   completed_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 interface NightPhotoRow {
@@ -18,6 +19,7 @@ interface NightPhotoRow {
   grupo: string;
   photo_url: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 interface ParticipantRow {
@@ -135,6 +137,30 @@ export default function Admin() {
       setResetResult({ ok: false, message: 'Error de conexión. No se tocó nada.' });
     } finally {
       setResetLoading(false);
+    }
+  }
+
+  async function handleDeletePhoto(table: 'submissions' | 'night_photo', id: string, action: 'delete' | 'restore') {
+    if (action === 'delete') {
+      const confirmed = window.confirm(
+        'Esta foto va a dejar de contar en el ranking y de mostrarse. No se borra de verdad, la vas a poder restaurar después. ¿Confirmás?'
+      );
+      if (!confirmed) return;
+    }
+    try {
+      const res = await fetch('/.netlify/functions/admin-delete-photo', {
+        method: 'POST',
+        headers: { 'x-admin-password': password, 'content-type': 'application/json' },
+        body: JSON.stringify({ table, id, action }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        alert(body?.error || 'No se pudo completar la acción.');
+        return;
+      }
+      void tryLoad(password);
+    } catch {
+      alert('Error de conexión. No se tocó nada.');
     }
   }
 
@@ -275,13 +301,14 @@ export default function Admin() {
                     <th>Grupo</th>
                     <th>Desafío</th>
                     <th>Foto subida</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r) => {
                     const wasEdited = r.updated_at !== r.completed_at;
                     return (
-                      <tr key={r.id}>
+                      <tr key={r.id} className={r.deleted_at ? 'admin-row-deleted' : ''}>
                         <td>
                           <a href={r.photo_url} target="_blank" rel="noreferrer">
                             <img
@@ -301,6 +328,24 @@ export default function Admin() {
                         <td>
                           {new Date(r.updated_at).toLocaleString('es-AR')}
                           {wasEdited && <span className="admin-edited-tag"> (editada)</span>}
+                          {r.deleted_at && <span className="admin-deleted-tag"> (eliminada)</span>}
+                        </td>
+                        <td>
+                          {r.deleted_at ? (
+                            <button
+                              className="btn-text admin-restore-btn"
+                              onClick={() => void handleDeletePhoto('submissions', r.id, 'restore')}
+                            >
+                              Restaurar
+                            </button>
+                          ) : (
+                            <button
+                              className="btn-text admin-delete-btn"
+                              onClick={() => void handleDeletePhoto('submissions', r.id, 'delete')}
+                            >
+                              Eliminar
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -324,21 +369,36 @@ export default function Admin() {
           ) : (
             <div className="night-gallery">
               {nightPhotos.map((p) => (
-                <a
+                <div
                   key={p.id}
-                  href={p.photo_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="night-gallery-item"
+                  className={`night-gallery-item ${p.deleted_at ? 'admin-row-deleted' : ''}`}
                 >
-                  <img src={p.photo_url} alt="" loading="lazy" decoding="async" />
+                  <a href={p.photo_url} target="_blank" rel="noreferrer">
+                    <img src={p.photo_url} alt="" loading="lazy" decoding="async" />
+                  </a>
                   <div className="night-gallery-caption">
                     <strong>{p.guest_name}</strong>
                     <span>
                       Grupo {p.grupo} · {new Date(p.updated_at).toLocaleString('es-AR')}
+                      {p.deleted_at && <span className="admin-deleted-tag"> (eliminada)</span>}
                     </span>
+                    {p.deleted_at ? (
+                      <button
+                        className="btn-text admin-restore-btn"
+                        onClick={() => void handleDeletePhoto('night_photo', p.id, 'restore')}
+                      >
+                        Restaurar
+                      </button>
+                    ) : (
+                      <button
+                        className="btn-text admin-delete-btn"
+                        onClick={() => void handleDeletePhoto('night_photo', p.id, 'delete')}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           )}

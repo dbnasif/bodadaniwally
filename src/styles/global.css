@@ -718,3 +718,26 @@ h3 {
   color: var(--olive);
   font-style: italic;
 }
+
+.admin-deleted-tag {
+  color: var(--danger);
+  font-style: italic;
+}
+
+.admin-row-deleted {
+  opacity: 0.55;
+}
+
+.admin-delete-btn {
+  color: var(--danger);
+  font-weight: 700;
+  padding: 4px;
+  width: auto;
+}
+
+.admin-restore-btn {
+  color: var(--olive);
+  font-weight: 700;
+  padding: 4px;
+  width: auto;
+}

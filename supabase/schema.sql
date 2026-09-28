@@ -24,11 +24,17 @@ create table if not exists public.submissions (
   -- updated_at: cuándo se subió la foto que está actualmente. Cambia en
   -- cada edición.
   updated_at timestamptz not null default now(),
+  -- deleted_at: borrado "suave" desde /admin. NULL = activa. La foto y la
+  -- fila NUNCA se borran de verdad — solo se ocultan del ranking y de la
+  -- vista pública, pero admin las sigue viendo (y puede restaurarlas).
+  deleted_at timestamptz,
   unique (guest_id, challenge_id)
 );
 
 create index if not exists submissions_grupo_idx on public.submissions (grupo);
 create index if not exists submissions_challenge_idx on public.submissions (challenge_id);
+
+alter table public.submissions add column if not exists deleted_at timestamptz;
 
 -- Migración de instalaciones previas de este mismo proyecto que todavía
 -- tengan la columna vieja "created_at" en vez de "completed_at".
@@ -146,8 +152,11 @@ create table if not exists public.night_photo (
   guest_name text not null,
   grupo text not null check (grupo in ('A', 'B', 'C', 'D', 'E')),
   photo_path text not null,
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
+
+alter table public.night_photo add column if not exists deleted_at timestamptz;
 
 create or replace function public.night_photo_touch()
 returns trigger
@@ -323,6 +332,7 @@ select
   count(*)::int as points,
   max(s.completed_at) as reached_at
 from public.submissions s
+where s.deleted_at is null
 group by s.guest_id;
 
 grant select on public.ranking to anon;
