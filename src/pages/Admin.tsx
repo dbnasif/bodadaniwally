@@ -20,9 +20,21 @@ interface NightPhotoRow {
   updated_at: string;
 }
 
+interface ParticipantRow {
+  guest_id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  grupo: string | null;
+  challenges_count: number;
+  night_photo: boolean;
+  updated_at: string;
+}
+
 interface AdminData {
   submissions: SubmissionRow[];
   nightPhotos: NightPhotoRow[];
+  participants: ParticipantRow[];
 }
 
 const PASSWORD_KEY = 'boda_admin_pw';
@@ -33,11 +45,12 @@ export default function Admin() {
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'misiones' | 'noche' | 'reset'>('misiones');
+  const [tab, setTab] = useState<'misiones' | 'noche' | 'participantes' | 'reset'>('misiones');
 
   const [filterName, setFilterName] = useState('');
   const [filterGrupo, setFilterGrupo] = useState('');
   const [filterChallenge, setFilterChallenge] = useState('');
+  const [filterParticipant, setFilterParticipant] = useState('');
 
   const [resetEmail, setResetEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
@@ -115,6 +128,17 @@ export default function Admin() {
 
   const rows = data?.submissions ?? [];
   const nightPhotos = data?.nightPhotos ?? [];
+  const participants = data?.participants ?? [];
+
+  const filteredParticipants = useMemo(() => {
+    const q = filterParticipant.toLowerCase();
+    if (!q) return participants;
+    return participants.filter(
+      (p) =>
+        `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
+        (p.email ?? '').toLowerCase().includes(q)
+    );
+  }, [participants, filterParticipant]);
 
   const filtered = useMemo(() => {
     return rows.filter(
@@ -167,6 +191,12 @@ export default function Admin() {
         </button>
         <button className={`admin-tab ${tab === 'noche' ? 'active' : ''}`} onClick={() => setTab('noche')}>
           FOTOS DE LA NOCHE ({nightPhotos.length})
+        </button>
+        <button
+          className={`admin-tab ${tab === 'participantes' ? 'active' : ''}`}
+          onClick={() => setTab('participantes')}
+        >
+          PARTICIPANTES ({participants.length})
         </button>
         <button className={`admin-tab admin-tab-danger ${tab === 'reset' ? 'active' : ''}`} onClick={() => setTab('reset')}>
           ⚠️ RESET
@@ -289,6 +319,49 @@ export default function Admin() {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {tab === 'participantes' && (
+        <section>
+          <h2>Participantes ({filteredParticipants.length})</h2>
+          <p className="muted">
+            Nombre, apellido y email que cada invitado cargó en su perfil. El email es opcional,
+            así que puede quedar vacío.
+          </p>
+          <div className="admin-filters">
+            <input
+              placeholder="Filtrar por nombre o email"
+              value={filterParticipant}
+              onChange={(e) => setFilterParticipant(e.target.value)}
+            />
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
+                  <th>Email</th>
+                  <th>Grupo</th>
+                  <th>Desafíos</th>
+                  <th>Foto de la noche</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredParticipants.map((p) => (
+                  <tr key={p.guest_id}>
+                    <td>{p.first_name}</td>
+                    <td>{p.last_name}</td>
+                    <td>{p.email || '—'}</td>
+                    <td>{p.grupo || '—'}</td>
+                    <td>{p.challenges_count}</td>
+                    <td>{p.night_photo ? 'Sí' : 'No'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 
