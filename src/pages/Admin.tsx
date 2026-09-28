@@ -57,13 +57,17 @@ export default function Admin() {
         setAuthed(false);
         return;
       }
-      if (!res.ok) throw new Error('request failed');
+      if (!res.ok) {
+        // TODO(debug temporal): detalle técnico. Sacar una vez confirmado.
+        const body = await res.json().catch(() => null);
+        throw new Error(`[${res.status}] ${body?.error ?? 'sin detalle'}`);
+      }
       const result = (await res.json()) as AdminData;
       setData(result);
       setAuthed(true);
       sessionStorage.setItem(PASSWORD_KEY, pw);
-    } catch {
-      setError('No pudimos cargar los datos. Probá de nuevo.');
+    } catch (err) {
+      setError(`No pudimos cargar los datos. Detalle: ${err instanceof Error ? err.message : 'desconocido'}`);
     } finally {
       setLoading(false);
     }
