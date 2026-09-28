@@ -40,7 +40,8 @@ export default function MissionModal({
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   function confirmProfile() {
     const firstName = profileDraft.firstName.trim();
@@ -147,15 +148,32 @@ export default function MissionModal({
             <h2>{title}</h2>
             <p className="muted">{description}</p>
             {isEdit && <p className="edit-hint">Vas a reemplazar la foto que ya subiste.</p>}
+            {/*
+              Dos inputs separados en vez de uno solo sin "capture": así el
+              comportamiento es el mismo en iPhone y Android. Dejarlo librado
+              al selector nativo del sistema es poco confiable — en varios
+              Android ese picker genérico no ofrece la cámara como opción.
+            */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+            <input
+              ref={galleryInputRef}
               type="file"
               accept="image/*"
               onChange={handleFileChange}
               style={{ display: 'none' }}
             />
-            <button className="btn-primary" onClick={() => fileInputRef.current?.click()}>
-              {isEdit ? 'ELEGIR OTRA FOTO' : 'ELEGIR O SACAR FOTO'}
+            <button className="btn-primary" onClick={() => cameraInputRef.current?.click()}>
+              SACAR FOTO
+            </button>
+            <button className="btn-secondary" onClick={() => galleryInputRef.current?.click()}>
+              ELEGIR DE LA GALERÍA
             </button>
           </div>
         )}
@@ -166,7 +184,7 @@ export default function MissionModal({
             <button className="btn-primary" onClick={handleSubmit}>
               {isEdit ? 'GUARDAR CAMBIO' : 'ENVIAR'}
             </button>
-            <button className="btn-text" onClick={() => fileInputRef.current?.click()}>
+            <button className="btn-text" onClick={() => setStep('pick')}>
               Elegir otra foto
             </button>
           </div>
