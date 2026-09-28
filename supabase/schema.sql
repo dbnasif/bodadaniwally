@@ -199,8 +199,15 @@ create table if not exists public.guest_profile (
   first_name text not null,
   last_name text not null,
   email text,
+  -- created_at: hora de registro real, se pone una sola vez y no se toca
+  -- nunca más (el cliente nunca la manda en sus UPDATE, así que queda
+  -- intacta). updated_at sí cambia en cada edición del perfil.
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.guest_profile
+  add column if not exists created_at timestamptz not null default now();
 
 create or replace function public.guest_profile_touch()
 returns trigger

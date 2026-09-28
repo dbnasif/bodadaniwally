@@ -38,7 +38,7 @@ export const handler: Handler = async (event) => {
       .order('updated_at', { ascending: false }),
     supabase
       .from('guest_profile')
-      .select('guest_id, first_name, last_name, email, updated_at'),
+      .select('guest_id, first_name, last_name, email, created_at, updated_at'),
     supabase
       .from('guest_profile_history')
       .select('guest_id, old_first_name, old_last_name, new_first_name, new_last_name, changed_at')
@@ -97,6 +97,7 @@ export const handler: Handler = async (event) => {
       challenges_count: challengeCountByGuest.get(p.guest_id) ?? 0,
       night_photo: nightPhotoByGuest.has(p.guest_id),
       name_changes: historyCountByGuest.get(p.guest_id) ?? 0,
+      registered_at: p.created_at,
       updated_at: p.updated_at,
     }))
     .sort((a, b) => (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name, 'es'));

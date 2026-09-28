@@ -29,6 +29,7 @@ interface ParticipantRow {
   challenges_count: number;
   night_photo: boolean;
   name_changes: number;
+  registered_at: string;
   updated_at: string;
 }
 
@@ -369,6 +370,7 @@ export default function Admin() {
                   <th>Desafíos</th>
                   <th>Foto de la noche</th>
                   <th>Cambió el nombre</th>
+                  <th>Registrado</th>
                 </tr>
               </thead>
               <tbody>
@@ -389,6 +391,7 @@ export default function Admin() {
                         'No'
                       )}
                     </td>
+                    <td>{new Date(p.registered_at).toLocaleString('es-AR')}</td>
                   </tr>
                 ))}
               </tbody>
