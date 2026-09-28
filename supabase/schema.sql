@@ -103,23 +103,8 @@ create policy "anon puede editar su propia misión"
   using (true)
   with check (true);
 
--- ============================================================
--- Vista pública de ranking: agrega por guest_id, expone solo
--- nombre + puntos + cuándo alcanzó ese puntaje (para el desempate).
--- Al no tener security_invoker, la vista corre con los permisos de
--- quien la creó (no los del usuario anon), así que puede leer la
--- tabla base aunque el anon no tenga permiso de SELECT directo sobre ella.
--- ============================================================
-create or replace view public.ranking as
-select
-  guest_id,
-  (array_agg(guest_name order by updated_at desc))[1] as guest_name,
-  count(*)::int as points,
-  max(completed_at) as reached_at
-from public.submissions
-group by guest_id;
-
-grant select on public.ranking to anon;
+-- (La vista pública de ranking se define más abajo, después de
+-- guest_profile, porque usa el nombre actual del perfil.)
 
 -- ============================================================
 -- Storage: bucket público "photos".
@@ -263,3 +248,74 @@ create table if not exists public.ranking_backups (
 );
 
 alter table public.ranking_backups enable row level security;
+
+-- ============================================================
+-- Historial de cambios de nombre: se llena solo, con un trigger, cada vez
+-- que "Mi perfil" cambia first_name/last_name. Guarda el valor ANTERIOR,
+-- así queda trazabilidad de que hubo un cambio (y cuál era el nombre
+-- antes) para que Dani/Wally lo puedan ver en /admin. RLS sin policies
+-- para "anon" — mismo criterio que ranking_backups: solo lo lee la
+-- Netlify Function con la service_role key.
+-- ============================================================
+create table if not exists public.guest_profile_history (
+  id uuid primary key default gen_random_uuid(),
+  guest_id uuid not null,
+  old_first_name text,
+  old_last_name text,
+  new_first_name text,
+  new_last_name text,
+  changed_at timestamptz not null default now()
+);
+
+alter table public.guest_profile_history enable row level security;
+
+create or replace function public.guest_profile_log_change()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'UPDATE' and (
+    old.first_name is distinct from new.first_name
+    or old.last_name is distinct from new.last_name
+  ) then
+    insert into public.guest_profile_history (guest_id, old_first_name, old_last_name, new_first_name, new_last_name)
+    values (old.guest_id, old.first_name, old.last_name, new.first_name, new.last_name);
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guest_profile_log_change on public.guest_profile;
+create trigger guest_profile_log_change
+  after update on public.guest_profile
+  for each row execute function public.guest_profile_log_change();
+
+-- ============================================================
+-- Vista pública de ranking: agrega por guest_id. El nombre mostrado sale
+-- del perfil ACTUAL del invitado (guest_profile), no de lo que haya
+-- quedado grabado en cada fila de submissions — así, si alguien corrige su
+-- nombre desde "Mi perfil", el ranking lo refleja al toque, sin esperar a
+-- que suba otra foto. Si por algún motivo no hay perfil para ese guest_id
+-- (invitados de una versión muy vieja), cae al nombre que había en la
+-- última foto subida, como antes.
+-- Al no tener security_invoker, la vista corre con los permisos de quien
+-- la creó, así que puede leer submissions/guest_profile aunque el anon no
+-- tenga permiso de SELECT directo sobre esas tablas.
+-- ============================================================
+create or replace view public.ranking as
+select
+  s.guest_id,
+  coalesce(
+    (
+      select trim(gp.first_name || ' ' || gp.last_name)
+      from public.guest_profile gp
+      where gp.guest_id = s.guest_id
+    ),
+    (array_agg(s.guest_name order by s.updated_at desc))[1]
+  ) as guest_name,
+  count(*)::int as points,
+  max(s.completed_at) as reached_at
+from public.submissions s
+group by s.guest_id;
+
+grant select on public.ranking to anon;

@@ -27,7 +27,7 @@ export const handler: Handler = async (event) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  const [submissionsRes, nightPhotoRes, profilesRes] = await Promise.all([
+  const [submissionsRes, nightPhotoRes, profilesRes, historyRes] = await Promise.all([
     supabase
       .from('submissions')
       .select('id, guest_id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at')
@@ -39,6 +39,10 @@ export const handler: Handler = async (event) => {
     supabase
       .from('guest_profile')
       .select('guest_id, first_name, last_name, email, updated_at'),
+    supabase
+      .from('guest_profile_history')
+      .select('guest_id, old_first_name, old_last_name, new_first_name, new_last_name, changed_at')
+      .order('changed_at', { ascending: false }),
   ]);
 
   if (submissionsRes.error) {
@@ -50,6 +54,9 @@ export const handler: Handler = async (event) => {
   if (profilesRes.error) {
     return { statusCode: 500, body: JSON.stringify({ error: profilesRes.error.message }) };
   }
+  if (historyRes.error) {
+    return { statusCode: 500, body: JSON.stringify({ error: historyRes.error.message }) };
+  }
 
   const withUrl = (row: { photo_path: string }) => ({
     ...row,
@@ -59,6 +66,7 @@ export const handler: Handler = async (event) => {
   const submissions = submissionsRes.data ?? [];
   const nightPhotos = nightPhotoRes.data ?? [];
   const profiles = profilesRes.data ?? [];
+  const history = historyRes.data ?? [];
 
   // Grupo no se guarda en guest_profile (es un dato del dispositivo, no del
   // perfil) — lo inferimos de la primera fila que tengamos de esa persona.
@@ -74,6 +82,11 @@ export const handler: Handler = async (event) => {
     nightPhotoByGuest.add(n.guest_id);
   }
 
+  const historyCountByGuest = new Map<string, number>();
+  for (const h of history) {
+    historyCountByGuest.set(h.guest_id, (historyCountByGuest.get(h.guest_id) ?? 0) + 1);
+  }
+
   const participants = profiles
     .map((p) => ({
       guest_id: p.guest_id,
@@ -83,6 +96,7 @@ export const handler: Handler = async (event) => {
       grupo: grupoByGuest.get(p.guest_id) ?? null,
       challenges_count: challengeCountByGuest.get(p.guest_id) ?? 0,
       night_photo: nightPhotoByGuest.has(p.guest_id),
+      name_changes: historyCountByGuest.get(p.guest_id) ?? 0,
       updated_at: p.updated_at,
     }))
     .sort((a, b) => (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name, 'es'));
@@ -94,6 +108,7 @@ export const handler: Handler = async (event) => {
       submissions: submissions.map(withUrl),
       nightPhotos: nightPhotos.map(withUrl),
       participants,
+      nameChangeHistory: history,
     }),
   };
 };

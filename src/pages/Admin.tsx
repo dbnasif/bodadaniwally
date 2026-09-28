@@ -28,13 +28,24 @@ interface ParticipantRow {
   grupo: string | null;
   challenges_count: number;
   night_photo: boolean;
+  name_changes: number;
   updated_at: string;
+}
+
+interface NameChangeRow {
+  guest_id: string;
+  old_first_name: string | null;
+  old_last_name: string | null;
+  new_first_name: string;
+  new_last_name: string;
+  changed_at: string;
 }
 
 interface AdminData {
   submissions: SubmissionRow[];
   nightPhotos: NightPhotoRow[];
   participants: ParticipantRow[];
+  nameChangeHistory: NameChangeRow[];
 }
 
 const PASSWORD_KEY = 'boda_admin_pw';
@@ -129,6 +140,17 @@ export default function Admin() {
   const rows = data?.submissions ?? [];
   const nightPhotos = data?.nightPhotos ?? [];
   const participants = data?.participants ?? [];
+  const nameChangeHistory = data?.nameChangeHistory ?? [];
+
+  function nameChangeTooltip(guestId: string): string {
+    return nameChangeHistory
+      .filter((h) => h.guest_id === guestId)
+      .map(
+        (h) =>
+          `${new Date(h.changed_at).toLocaleString('es-AR')}: "${h.old_first_name ?? '?'} ${h.old_last_name ?? '?'}" → "${h.new_first_name} ${h.new_last_name}"`
+      )
+      .join('\n');
+  }
 
   const filteredParticipants = useMemo(() => {
     const q = filterParticipant.toLowerCase();
@@ -346,6 +368,7 @@ export default function Admin() {
                   <th>Grupo</th>
                   <th>Desafíos</th>
                   <th>Foto de la noche</th>
+                  <th>Cambió el nombre</th>
                 </tr>
               </thead>
               <tbody>
@@ -357,6 +380,15 @@ export default function Admin() {
                     <td>{p.grupo || '—'}</td>
                     <td>{p.challenges_count}</td>
                     <td>{p.night_photo ? 'Sí' : 'No'}</td>
+                    <td>
+                      {p.name_changes > 0 ? (
+                        <span title={nameChangeTooltip(p.guest_id)} className="admin-edited-tag">
+                          Sí ({p.name_changes}) — pasá el mouse
+                        </span>
+                      ) : (
+                        'No'
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
