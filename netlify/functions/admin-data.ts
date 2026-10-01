@@ -27,7 +27,7 @@ export const handler: Handler = async (event) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  const [submissionsRes, nightPhotoRes, profilesRes, historyRes, drawsRes] = await Promise.all([
+  const [submissionsRes, nightPhotoRes, profilesRes, historyRes, drawsRes, rankingRes] = await Promise.all([
     supabase
       .from('submissions')
       .select('id, guest_id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at, deleted_at')
@@ -47,6 +47,10 @@ export const handler: Handler = async (event) => {
       .from('winner_draws')
       .select('id, drawn_at, max_points, candidates, winner_guest_id, winner_name')
       .order('drawn_at', { ascending: false }),
+    // Misma vista que usa el sorteo: agrupada por guest_id, sin contar fotos
+    // eliminadas. Así el admin ve, antes de sortear, exactamente con quiénes
+    // se jugaría el empate.
+    supabase.from('ranking').select('guest_id, guest_name, points').order('points', { ascending: false }),
   ]);
 
   if (submissionsRes.error) {
@@ -63,6 +67,9 @@ export const handler: Handler = async (event) => {
   }
   if (drawsRes.error) {
     return { statusCode: 500, body: JSON.stringify({ error: drawsRes.error.message }) };
+  }
+  if (rankingRes.error) {
+    return { statusCode: 500, body: JSON.stringify({ error: rankingRes.error.message }) };
   }
 
   const withUrl = (row: { photo_path: string }) => ({
@@ -121,6 +128,7 @@ export const handler: Handler = async (event) => {
       participants,
       nameChangeHistory: history,
       winnerDraws: drawsRes.data ?? [],
+      ranking: rankingRes.data ?? [],
     }),
   };
 };

@@ -69,6 +69,15 @@ export default function Misiones({ onNavigate }: Props) {
         <p className="hero-special-note">+ Una misión especial fuera de competencia ✨</p>
       </header>
 
+      <NightPhotoCard
+        grupo={grupo}
+        done={nightDone}
+        onCompleted={refreshNightPhoto}
+        onViewRanking={() => onNavigate('/ranking')}
+      />
+
+      <p className="challenge-list-label">Tus {challenges.length} desafíos</p>
+
       <div className="challenge-list">
         {challenges.map((c) => (
           <ChallengeCard
@@ -82,13 +91,6 @@ export default function Misiones({ onNavigate }: Props) {
           />
         ))}
       </div>
-
-      <NightPhotoCard
-        grupo={grupo}
-        done={nightDone}
-        onCompleted={refreshNightPhoto}
-        onViewRanking={() => onNavigate('/ranking')}
-      />
 
       <p className="prize-note">Completá desafíos, sumá puntos y subí en el ranking. Hay premio.</p>
 

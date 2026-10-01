@@ -59,12 +59,19 @@ interface WinnerDrawRow {
   winner_name: string;
 }
 
+interface RankingRow {
+  guest_id: string;
+  guest_name: string;
+  points: number;
+}
+
 interface AdminData {
   submissions: SubmissionRow[];
   nightPhotos: NightPhotoRow[];
   participants: ParticipantRow[];
   nameChangeHistory: NameChangeRow[];
   winnerDraws: WinnerDrawRow[];
+  ranking: RankingRow[];
 }
 
 const PASSWORD_KEY = 'boda_admin_pw';
@@ -209,7 +216,12 @@ export default function Admin() {
   const participants = data?.participants ?? [];
   const nameChangeHistory = data?.nameChangeHistory ?? [];
   const winnerDraws = data?.winnerDraws ?? [];
+  const ranking = data?.ranking ?? [];
   const lastDraw = winnerDraws[0] ?? null;
+
+  const maxPoints = ranking.length > 0 ? Math.max(...ranking.map((r) => r.points)) : 0;
+  const drawCandidates = ranking.filter((r) => r.points === maxPoints && maxPoints > 0);
+  const canDraw = drawCandidates.length > 1;
 
   function nameChangeTooltip(guestId: string): string {
     return nameChangeHistory
@@ -239,16 +251,6 @@ export default function Admin() {
         (!filterChallenge || r.challenge_id.toLowerCase().includes(filterChallenge.toLowerCase()))
     );
   }, [rows, filterName, filterGrupo, filterChallenge]);
-
-  const rankingSummary = useMemo(() => {
-    const map = new Map<string, { name: string; points: number }>();
-    for (const r of rows) {
-      const existing = map.get(r.guest_name);
-      if (existing) existing.points += 1;
-      else map.set(r.guest_name, { name: r.guest_name, points: 1 });
-    }
-    return [...map.values()].sort((a, b) => b.points - a.points);
-  }, [rows]);
 
   if (!authed) {
     return (
@@ -300,11 +302,11 @@ export default function Admin() {
       {tab === 'misiones' && (
         <>
           <section>
-            <h2>Ranking completo ({rankingSummary.length} invitados)</h2>
+            <h2>Ranking completo ({ranking.length} invitados)</h2>
             <ol className="ranking-list">
-              {rankingSummary.map((r) => (
-                <li key={r.name}>
-                  <span className="rank-name">{r.name}</span>
+              {ranking.map((r) => (
+                <li key={r.guest_id}>
+                  <span className="rank-name">{r.guest_name}</span>
                   <span className="rank-points">{r.points} pts</span>
                 </li>
               ))}
@@ -514,7 +516,31 @@ export default function Admin() {
             porque falló, se ve en el historial.
           </p>
 
-          <button className="btn-primary" disabled={drawLoading} onClick={() => void handleDrawWinner()}>
+          {ranking.length === 0 ? (
+            <p className="muted center-text">Todavía nadie tiene puntos en el ranking.</p>
+          ) : canDraw ? (
+            <div className="draw-candidates">
+              <p className="draw-candidates-label">
+                Empatados en {maxPoints} puntos — se sortea entre {drawCandidates.length}:
+              </p>
+              <ul className="draw-candidates-list">
+                {drawCandidates.map((c) => (
+                  <li key={c.guest_id}>{c.guest_name}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="muted center-text">
+              No hay empate: {drawCandidates[0]?.guest_name ?? 'alguien'} está solo en primer lugar
+              con {maxPoints} puntos. No hace falta sortear.
+            </p>
+          )}
+
+          <button
+            className="btn-primary"
+            disabled={drawLoading || !canDraw}
+            onClick={() => void handleDrawWinner()}
+          >
             {drawLoading ? 'Sorteando...' : 'SORTEAR GANADOR'}
           </button>
           {drawError && <p className="error-text">{drawError}</p>}
