@@ -27,7 +27,7 @@ export const handler: Handler = async (event) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  const [submissionsRes, nightPhotoRes, profilesRes, historyRes] = await Promise.all([
+  const [submissionsRes, nightPhotoRes, profilesRes, historyRes, drawsRes] = await Promise.all([
     supabase
       .from('submissions')
       .select('id, guest_id, guest_name, grupo, challenge_id, challenge_title, photo_path, completed_at, updated_at, deleted_at')
@@ -43,6 +43,10 @@ export const handler: Handler = async (event) => {
       .from('guest_profile_history')
       .select('guest_id, old_first_name, old_last_name, new_first_name, new_last_name, changed_at')
       .order('changed_at', { ascending: false }),
+    supabase
+      .from('winner_draws')
+      .select('id, drawn_at, max_points, candidates, winner_guest_id, winner_name')
+      .order('drawn_at', { ascending: false }),
   ]);
 
   if (submissionsRes.error) {
@@ -56,6 +60,9 @@ export const handler: Handler = async (event) => {
   }
   if (historyRes.error) {
     return { statusCode: 500, body: JSON.stringify({ error: historyRes.error.message }) };
+  }
+  if (drawsRes.error) {
+    return { statusCode: 500, body: JSON.stringify({ error: drawsRes.error.message }) };
   }
 
   const withUrl = (row: { photo_path: string }) => ({
@@ -113,6 +120,7 @@ export const handler: Handler = async (event) => {
       nightPhotos: nightPhotos.map(withUrl),
       participants,
       nameChangeHistory: history,
+      winnerDraws: drawsRes.data ?? [],
     }),
   };
 };

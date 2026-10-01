@@ -44,11 +44,27 @@ interface NameChangeRow {
   changed_at: string;
 }
 
+interface DrawCandidate {
+  guest_id: string;
+  guest_name: string;
+  points: number;
+}
+
+interface WinnerDrawRow {
+  id: string;
+  drawn_at: string;
+  max_points: number;
+  candidates: DrawCandidate[];
+  winner_guest_id: string;
+  winner_name: string;
+}
+
 interface AdminData {
   submissions: SubmissionRow[];
   nightPhotos: NightPhotoRow[];
   participants: ParticipantRow[];
   nameChangeHistory: NameChangeRow[];
+  winnerDraws: WinnerDrawRow[];
 }
 
 const PASSWORD_KEY = 'boda_admin_pw';
@@ -59,7 +75,7 @@ export default function Admin() {
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'misiones' | 'noche' | 'participantes' | 'reset'>('misiones');
+  const [tab, setTab] = useState<'misiones' | 'noche' | 'participantes' | 'sorteo' | 'reset'>('misiones');
 
   const [filterName, setFilterName] = useState('');
   const [filterGrupo, setFilterGrupo] = useState('');
@@ -70,6 +86,9 @@ export default function Admin() {
   const [resetCode, setResetCode] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const [drawLoading, setDrawLoading] = useState(false);
+  const [drawError, setDrawError] = useState('');
 
   async function tryLoad(pw: string) {
     if (!pw) return;
@@ -164,10 +183,33 @@ export default function Admin() {
     }
   }
 
+  async function handleDrawWinner() {
+    setDrawLoading(true);
+    setDrawError('');
+    try {
+      const res = await fetch('/.netlify/functions/admin-draw-winner', {
+        method: 'POST',
+        headers: { 'x-admin-password': password, 'content-type': 'application/json' },
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setDrawError(body.error || 'No se pudo sortear.');
+        return;
+      }
+      void tryLoad(password);
+    } catch {
+      setDrawError('Error de conexión. Probá de nuevo.');
+    } finally {
+      setDrawLoading(false);
+    }
+  }
+
   const rows = data?.submissions ?? [];
   const nightPhotos = data?.nightPhotos ?? [];
   const participants = data?.participants ?? [];
   const nameChangeHistory = data?.nameChangeHistory ?? [];
+  const winnerDraws = data?.winnerDraws ?? [];
+  const lastDraw = winnerDraws[0] ?? null;
 
   function nameChangeTooltip(guestId: string): string {
     return nameChangeHistory
@@ -246,6 +288,9 @@ export default function Admin() {
           onClick={() => setTab('participantes')}
         >
           PARTICIPANTES ({participants.length})
+        </button>
+        <button className={`admin-tab ${tab === 'sorteo' ? 'active' : ''}`} onClick={() => setTab('sorteo')}>
+          🎲 SORTEO
         </button>
         <button className={`admin-tab admin-tab-danger ${tab === 'reset' ? 'active' : ''}`} onClick={() => setTab('reset')}>
           ⚠️ RESET
@@ -457,6 +502,65 @@ export default function Admin() {
               </tbody>
             </table>
           </div>
+        </section>
+      )}
+
+      {tab === 'sorteo' && (
+        <section>
+          <h2>🎲 Sortear ganador del Desafío Fotográfico</h2>
+          <p className="muted">
+            Elige uno al azar entre todos los que están empatados en el puntaje más alto del
+            ranking en este momento. Queda un registro de cada corrida — si hace falta repetirlo
+            porque falló, se ve en el historial.
+          </p>
+
+          <button className="btn-primary" disabled={drawLoading} onClick={() => void handleDrawWinner()}>
+            {drawLoading ? 'Sorteando...' : 'SORTEAR GANADOR'}
+          </button>
+          {drawError && <p className="error-text">{drawError}</p>}
+
+          {lastDraw && (
+            <div className="draw-result">
+              <p className="draw-result-label">Último sorteo</p>
+              <p className="draw-result-winner">🏆 {lastDraw.winner_name}</p>
+              <p className="muted">
+                {new Date(lastDraw.drawn_at).toLocaleString('es-AR')} · compitió contra{' '}
+                {lastDraw.candidates.length - 1} más, todos con {lastDraw.max_points} puntos.
+              </p>
+            </div>
+          )}
+
+          {winnerDraws.length > 0 && (
+            <>
+              <h2>Historial de sorteos ({winnerDraws.length})</h2>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Puntaje</th>
+                      <th>Candidatos</th>
+                      <th>Ganador</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {winnerDraws.map((d) => (
+                      <tr key={d.id}>
+                        <td>{new Date(d.drawn_at).toLocaleString('es-AR')}</td>
+                        <td>{d.max_points}</td>
+                        <td title={d.candidates.map((c) => c.guest_name).join(', ')}>
+                          {d.candidates.length}
+                        </td>
+                        <td>
+                          <strong>{d.winner_name}</strong>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </section>
       )}
 

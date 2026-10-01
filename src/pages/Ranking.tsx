@@ -50,6 +50,7 @@ export default function Ranking({ onNavigate }: Props) {
     <div className="page">
       <header className="hero hero-card hero-card-bg small">
         <h1>🏆 RANKING</h1>
+        <p className="ranking-winner-note">Un solo ganador se lleva el premio del Desafío Fotográfico.</p>
       </header>
 
       {error && <p className="error-text">{error}</p>}

@@ -336,3 +336,22 @@ where s.deleted_at is null
 group by s.guest_id;
 
 grant select on public.ranking to anon;
+
+-- ============================================================
+-- Registro de sorteos de ganador (desempate del Desafío Fotográfico).
+-- Cada vez que se usa el botón "Sortear ganador" en /admin queda una fila
+-- acá: a quiénes incluyó el sorteo, con cuántos puntos, y quién salió. Así,
+-- si hace falta volver a correrlo porque el primer intento falló, queda
+-- claro en el historial que fue por eso. RLS sin policies para "anon" —
+-- solo lo lee/escribe la Netlify Function con la service_role key.
+-- ============================================================
+create table if not exists public.winner_draws (
+  id uuid primary key default gen_random_uuid(),
+  drawn_at timestamptz not null default now(),
+  max_points int not null,
+  candidates jsonb not null,
+  winner_guest_id uuid not null,
+  winner_name text not null
+);
+
+alter table public.winner_draws enable row level security;

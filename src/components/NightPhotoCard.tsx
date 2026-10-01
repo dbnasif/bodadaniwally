@@ -24,6 +24,8 @@ export default function NightPhotoCard({ grupo, done, onCompleted, onViewRanking
       <p className="night-card-copy">{DESCRIPTION}</p>
       <p className="night-card-fineprint">
         No suma puntos al ranking. Dani &amp; Wally van a elegir su favorita y hay premio aparte.
+        <br />
+        La eligen al día siguiente y se contactan directamente con quien gane.
       </p>
       {done ? (
         <button className="challenge-done night-done" onClick={() => setOpen(true)}>

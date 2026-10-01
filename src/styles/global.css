@@ -171,6 +171,12 @@ h3 {
   opacity: 0.85;
 }
 
+.ranking-winner-note {
+  font-size: 12.5px;
+  color: #6a7360;
+  margin-top: 4px;
+}
+
 .night-card {
   position: relative;
   background: var(--gold-soft);
@@ -630,6 +636,31 @@ h3 {
 .reset-btn {
   background: var(--danger);
   margin-top: 4px;
+}
+
+.draw-result {
+  background: var(--gold-soft);
+  border: 1px solid var(--gold);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  text-align: center;
+}
+
+.draw-result-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--gold-text);
+  margin: 0 0 4px;
+}
+
+.draw-result-winner {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text);
 }
 
 .night-gallery {
