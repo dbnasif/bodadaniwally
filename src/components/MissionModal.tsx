@@ -92,6 +92,11 @@ export default function MissionModal({
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+        {step === 'preview' && (
+          <button className="modal-back" onClick={() => setStep('pick')} aria-label="Volver">
+            ‹
+          </button>
+        )}
         <button className="modal-close" onClick={onClose} aria-label="Cerrar">
           ✕
         </button>
