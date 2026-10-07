@@ -681,6 +681,12 @@ h3 {
   margin-top: 4px;
 }
 
+.reset-all-heading {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 2px dashed var(--danger);
+}
+
 .draw-result {
   background: var(--gold-soft);
   border: 1px solid var(--gold);

@@ -94,6 +94,9 @@ export default function Admin() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<{ ok: boolean; message: string } | null>(null);
 
+  const [resetAllLoading, setResetAllLoading] = useState(false);
+  const [resetAllResult, setResetAllResult] = useState<{ ok: boolean; message: string } | null>(null);
+
   const [drawLoading, setDrawLoading] = useState(false);
   const [drawError, setDrawError] = useState('');
 
@@ -163,6 +166,42 @@ export default function Admin() {
       setResetResult({ ok: false, message: 'Error de conexión. No se tocó nada.' });
     } finally {
       setResetLoading(false);
+    }
+  }
+
+  async function handleResetAll() {
+    const email = resetEmail.trim();
+    const code = resetCode.trim();
+    if (!email || !code) return;
+
+    const confirmed = window.confirm(
+      'ESTO BORRA TODO: puntos, participantes, su historial de cambios de nombre, Foto de la Noche y sorteos. Se guarda un backup completo antes de borrar, pero la app va a quedar como recién instalada. ¿Confirmás?'
+    );
+    if (!confirmed) return;
+
+    setResetAllLoading(true);
+    setResetAllResult(null);
+    try {
+      const res = await fetch('/.netlify/functions/admin-reset-all', {
+        method: 'POST',
+        headers: { 'x-admin-password': password, 'content-type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        const b = body.backedUp;
+        setResetAllResult({
+          ok: true,
+          message: `Listo, quedó todo en cero. Backup guardado de ${b.submissions} cargas, ${b.nightPhotos} fotos de la noche, ${b.participants} participantes, ${b.nameChanges} cambios de nombre y ${b.winnerDraws} sorteos. Importante: en los celulares que ya probaron la app, hay que borrar los datos del sitio (o usar una ventana privada) para que no sigan mostrando su progreso viejo guardado en el teléfono.`,
+        });
+        void tryLoad(password);
+      } else {
+        setResetAllResult({ ok: false, message: body.error || 'No se pudo resetear.' });
+      }
+    } catch {
+      setResetAllResult({ ok: false, message: 'Error de conexión. No se tocó nada.' });
+    } finally {
+      setResetAllLoading(false);
     }
   }
 
@@ -621,6 +660,25 @@ export default function Admin() {
           </button>
           {resetResult && (
             <p className={resetResult.ok ? 'profile-saved' : 'error-text'}>{resetResult.message}</p>
+          )}
+
+          <h2 className="reset-all-heading">🔥 Reset total (antes del casamiento)</h2>
+          <p className="muted">
+            Borra absolutamente todo lo que haya quedado de pruebas: puntos, participantes
+            (nombre/apellido/email), su historial de cambios de nombre, Foto de la Noche y
+            sorteos. Usa el mismo email y código de arriba. Guarda un backup completo antes de
+            borrar, pero después de esto la app queda como recién instalada — pensado para usar
+            una sola vez, justo antes de que empiecen a entrar los invitados reales.
+          </p>
+          <button
+            className="btn-primary reset-btn"
+            disabled={resetAllLoading || !resetEmail.trim() || !resetCode.trim()}
+            onClick={() => void handleResetAll()}
+          >
+            {resetAllLoading ? 'Reseteando todo...' : 'RESET TOTAL'}
+          </button>
+          {resetAllResult && (
+            <p className={resetAllResult.ok ? 'profile-saved' : 'error-text'}>{resetAllResult.message}</p>
           )}
         </section>
       )}
