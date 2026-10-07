@@ -98,6 +98,11 @@ export default function Misiones({ onNavigate }: Props) {
         🏆 RANKING
       </button>
 
+      <p className="bug-footnote">
+        🐛 Hecha con amor y conocimiento cuestionable de programación. Si algo falla, fingí
+        demencia y seguí sacando fotos.
+      </p>
+
       {profileOpen && (
         <ProfileModal
           grupo={grupo}
